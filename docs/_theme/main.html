@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{#- The package version, as a small pill after the site name. -#}
+{% block extrahead %}
+  <style>
+    .md-header__topic:first-child .md-ellipsis::after {
+      content: "{{ config.extra.version_text }}";
+    }
+  </style>
+{% endblock %}

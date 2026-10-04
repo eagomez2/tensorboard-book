@@ -1,0 +1,44 @@
+# Used when Streamlit is started from this folder (e.g. `streamlit run
+# src/tensorboard_book/app.py` while developing). `tensorboard-book` passes
+# the same options on its command line, so it doesn't need this file. Keep
+# the theme in step with THEME in src/tensorboard_book/cli.py.
+
+[browser]
+gatherUsageStats = false  # No usage statistics sent to Streamlit.
+
+[client]
+toolbarMode = "viewer"  # App menu with Settings > Theme.
+
+[server]
+showEmailPrompt = false
+fileWatcherType = "none"  # Don't watch the source folder for changes.
+runOnSave = false
+enableStaticServing = true  # Serves the bundled fonts in static/.
+
+[theme]
+font = "IBM Plex Sans, sans-serif"
+headingFont = "Newsreader, serif"
+headingFontWeights = 500
+codeFont = "IBM Plex Mono, monospace"
+baseRadius = "0.6rem"
+showSidebarBorder = false
+
+[theme.light]
+primaryColor = "#0F5F5A"
+backgroundColor = "#FAF9F6"
+secondaryBackgroundColor = "#F1EFE9"
+textColor = "#1B1A17"
+borderColor = "#E4E1D8"
+dataframeBorderColor = "#ECE9E1"
+dataframeHeaderBackgroundColor = "#F6F4EF"
+linkColor = "#0F5F5A"
+
+[theme.dark]
+primaryColor = "#2E8B80"
+backgroundColor = "#161614"
+secondaryBackgroundColor = "#22211E"
+textColor = "#ECE9E1"
+borderColor = "#34322D"
+dataframeBorderColor = "#2C2A26"
+dataframeHeaderBackgroundColor = "#1D1C19"
+linkColor = "#6CC5BB"

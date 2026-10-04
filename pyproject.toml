@@ -1,0 +1,68 @@
+[project]
+name = "tensorboard-book"
+version = "0.7.0"
+description = "Bookkeeping for folders of TensorBoard runs: index, tag, group, compare and browse artifacts."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Esteban Gomez", email = "esteban.gomezmellado@aalto.fi" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.24",
+    "plotly>=6.0",
+    "polars>=1.20",
+    "pyyaml>=6.0",
+    "streamlit>=1.50",
+    "tensorboard>=2.12",
+]
+
+[project.urls]
+Source = "https://github.com/eagomez2/tensorboard-book"
+Documentation = "https://github.com/eagomez2/tensorboard-book/tree/main/docs"
+
+[project.scripts]
+tensorboard-book = "tensorboard_book.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.17,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "D", "B", "UP"]
+ignore = ["D105", "D107", "B905"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
