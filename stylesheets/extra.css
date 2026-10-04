@@ -1,0 +1,244 @@
+/* The app's look: warm light and dark themes with one teal accent, IBM Plex
+   for text and code, Newsreader for titles. Colors match COLORS in
+   src/tensorboard_book/cli.py. */
+
+@font-face {
+  font-family: "IBM Plex Sans"; font-style: normal; font-display: swap;
+  font-weight: 100 700;
+  src: url("../assets/fonts/IBMPlexSans.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Newsreader"; font-style: normal; font-display: swap;
+  font-weight: 200 800;
+  src: url("../assets/fonts/Newsreader.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-display: swap;
+  font-weight: 400;
+  src: url("../assets/fonts/IBMPlexMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-style: normal; font-display: swap;
+  font-weight: 500;
+  src: url("../assets/fonts/IBMPlexMono-Medium.woff2") format("woff2");
+}
+
+:root {
+  --md-text-font: "IBM Plex Sans";
+  --md-code-font: "IBM Plex Mono";
+  --tb-heading-font: "Newsreader", serif;
+}
+
+[data-md-color-scheme="default"] {
+  --tb-bg: #FAF9F6;
+  --tb-bg-2: #F1EFE9;
+  --tb-text: #1B1A17;
+  --tb-border: #E4E1D8;
+  --tb-table-border: #ECE9E1;
+  --tb-table-head: #F6F4EF;
+  --tb-accent: #0F5F5A;
+  --tb-link: #0F5F5A;
+  --tb-active: #E4E1D8;
+  --tb-best-bg: #FBE7CF;
+  --tb-best-fg: #7A3F06;
+  --md-default-fg-color: rgba(27, 26, 23, 0.92);
+  --md-default-fg-color--light: rgba(27, 26, 23, 0.64);
+  --md-default-fg-color--lighter: rgba(27, 26, 23, 0.32);
+  --md-default-fg-color--lightest: rgba(27, 26, 23, 0.10);
+}
+
+[data-md-color-scheme="slate"] {
+  --tb-bg: #161614;
+  --tb-bg-2: #22211E;
+  --tb-text: #ECE9E1;
+  --tb-border: #34322D;
+  --tb-table-border: #2C2A26;
+  --tb-table-head: #1D1C19;
+  --tb-accent: #2E8B80;
+  --tb-link: #6CC5BB;
+  --tb-active: #34322D;
+  --tb-best-bg: #4A3417;
+  --tb-best-fg: #F6C68A;
+  --md-default-fg-color: rgba(236, 233, 225, 0.92);
+  --md-default-fg-color--light: rgba(236, 233, 225, 0.64);
+  --md-default-fg-color--lighter: rgba(236, 233, 225, 0.32);
+  --md-default-fg-color--lightest: rgba(236, 233, 225, 0.10);
+  --md-hue: 40;
+}
+
+[data-md-color-scheme="default"],
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: var(--tb-bg);
+  /* The header is the page color, with the text color on it. */
+  --md-primary-fg-color: var(--tb-bg);
+  --md-primary-fg-color--light: var(--tb-bg-2);
+  --md-primary-fg-color--dark: var(--tb-bg);
+  --md-primary-bg-color: var(--tb-text);
+  --md-primary-bg-color--light: var(--md-default-fg-color--light);
+  --md-accent-fg-color: var(--tb-accent);
+  --md-accent-fg-color--transparent: color-mix(in srgb, var(--tb-accent) 12%, transparent);
+  --md-accent-bg-color: #FFFFFF;
+  --md-typeset-a-color: var(--tb-link);
+  --md-code-bg-color: var(--tb-bg-2);
+  --md-code-fg-color: var(--tb-text);
+  --md-typeset-table-color: var(--tb-table-border);
+  --md-typeset-table-color--light: var(--tb-table-head);
+  --md-footer-bg-color: var(--tb-bg-2);
+  --md-footer-bg-color--dark: var(--tb-bg-2);
+  --md-footer-fg-color: var(--tb-text);
+  --md-footer-fg-color--light: var(--md-default-fg-color--light);
+  --md-footer-fg-color--lighter: var(--md-default-fg-color--light);
+  --md-shadow-z1: none;
+  --md-shadow-z2: none;
+}
+
+body { background-color: var(--md-default-bg-color); }
+
+/* Header: no bar of color, a thin line instead, and a serif site name. */
+.md-header {
+  border-bottom: 1px solid var(--tb-border);
+  box-shadow: none;
+}
+.md-header__topic:first-child {
+  font-family: var(--tb-heading-font);
+  font-weight: 500;
+  font-size: 1.05rem;
+}
+.md-header__button.md-logo img { height: 1.6rem; }
+[data-md-color-scheme="default"] .tb-logo--dark,
+[data-md-color-scheme="slate"] .tb-logo--light { display: none !important; }
+
+/* Search: a soft field, like the app's inputs. */
+.md-search__form {
+  background-color: var(--tb-bg-2);
+  border-radius: 0.6rem;
+}
+.md-search__form:hover { background-color: var(--tb-border); }
+.md-search__input { color: var(--tb-text); }
+.md-search__input::placeholder,
+.md-search__icon { color: var(--md-default-fg-color--light); }
+[data-md-toggle="search"]:checked ~ .md-header .md-search__form {
+  border-radius: 0.6rem 0.6rem 0 0;
+}
+
+/* Navigation: the current page is a tinted pill, as in the app's menu. */
+.md-nav__link--active,
+.md-nav__item .md-nav__link--active {
+  color: var(--tb-text);
+  font-weight: 600;
+}
+.md-sidebar--primary .md-nav__link--active {
+  background-color: var(--tb-active);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  margin-left: -0.6rem;
+  margin-right: 0;
+}
+.md-nav__item--section > .md-nav__link,
+.md-nav__item--section > .md-nav__link[for],
+.md-nav__item--section > .md-nav__link a {
+  color: var(--tb-text);
+  font-weight: 600;
+}
+.md-nav__link:hover,
+.md-nav__link:focus { color: var(--tb-link); }
+
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav--primary > .md-nav__title { display: none; }
+}
+.md-grid { max-width: 68rem; }
+
+/* Titles: Newsreader, like the app's page titles. */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  font-family: var(--tb-heading-font);
+  font-weight: 500;
+  color: var(--tb-text);
+  letter-spacing: -0.005em;
+}
+.md-typeset h1 { font-size: 2.6em; margin-bottom: 0.6em; }
+.md-typeset h2 { font-size: 1.65em; }
+.md-typeset h3 { font-size: 1.3em; }
+
+/* Tables: bordered with rounded corners, like the app's data frames. */
+.md-typeset table:not([class]) {
+  border: 1px solid var(--tb-table-border);
+  border-radius: 0.6rem;
+  font-size: 0.72rem;
+  box-shadow: none;
+}
+.md-typeset table:not([class]) th {
+  background-color: var(--tb-table-head);
+  font-weight: 600;
+}
+
+/* Code */
+.md-typeset code { border-radius: 0.35rem; }
+@media screen and (min-width: 45em) {
+  /* Keep options such as --no-auth on one line. */
+  .md-typeset :not(pre) > code { white-space: nowrap; }
+}
+.md-typeset pre > code { border-radius: 0.6rem; }
+
+/* Screenshots get a frame so they stand out from the page. */
+.md-typeset img.tb-shot {
+  border: 1px solid var(--tb-border);
+  border-radius: 0.6rem;
+}
+
+/* Admonitions: bordered tiles with a teal mark. */
+.md-typeset .admonition,
+.md-typeset details {
+  border: 1px solid var(--tb-border);
+  border-radius: 0.6rem;
+  background-color: var(--tb-bg);
+  box-shadow: none;
+  font-size: 0.72rem;
+}
+.md-typeset .admonition.note,
+.md-typeset details.note,
+.md-typeset .admonition.tip,
+.md-typeset details.tip,
+.md-typeset .admonition.info,
+.md-typeset details.info { border-color: var(--tb-border); }
+.md-typeset .note > .admonition-title,
+.md-typeset .tip > .admonition-title,
+.md-typeset .info > .admonition-title,
+.md-typeset .note > summary,
+.md-typeset .tip > summary,
+.md-typeset .info > summary {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+.md-typeset .note > .admonition-title::before,
+.md-typeset .tip > .admonition-title::before,
+.md-typeset .info > .admonition-title::before,
+.md-typeset .note > summary::before,
+.md-typeset .tip > summary::before,
+.md-typeset .info > summary::before { background-color: var(--tb-accent); }
+
+/* Footer */
+.md-footer-meta { border-top: 1px solid var(--tb-border); }
+.md-footer__link { color: var(--tb-text); }
+.md-copyright { color: var(--md-default-fg-color--light); }
+
+/* The version pill after the site name (the text is set in main.html). */
+.md-header__topic:first-child .md-ellipsis::after {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.45rem;
+  border-radius: 0.6rem;
+  background-color: var(--tb-bg-2);
+  color: var(--md-default-fg-color--light);
+  font-family: var(--md-text-font-family);
+  font-size: 0.6rem;
+  font-weight: 500;
+  line-height: 1.5;
+  vertical-align: 0.2em;
+}
+.md-header__topic:first-child .md-ellipsis { overflow: visible; }
+
+/* The GitHub link in the header. */
+.md-source { color: var(--tb-text); }
+.md-source__fact { color: var(--md-default-fg-color--light); }
+.md-typeset .md-content__button { color: var(--md-default-fg-color--light); }
