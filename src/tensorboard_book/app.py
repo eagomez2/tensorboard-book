@@ -206,6 +206,8 @@ STYLE = f"""
 """
 # Views whose content the sidebar filters change.
 FILTER_VIEWS = {"Experiments", "Timeline"}
+# The Baseline option in Compare that shows no change columns.
+NO_BASELINE = "None"
 FILTER_DEFAULTS = {
     "group": "All runs",
     "tags": [],
@@ -340,10 +342,14 @@ CELL_CSS = {
     "light": {
         "best": "background-color: #FBE7CF; color: #7A3F06; font-weight: 600",
         "differ": "background-color: #F1EEE6; font-weight: 600",
+        "good": "color: #0B6B4F; font-weight: 600",
+        "bad": "color: #A0400C; font-weight: 600",
     },
     "dark": {
         "best": "background-color: #4A3417; color: #F6C68A; font-weight: 600",
         "differ": "background-color: #2C2A26; font-weight: 600",
+        "good": "color: #5CC9A0; font-weight: 600",
+        "bad": "color: #F29A6B; font-weight: 600",
     },
 }
 
@@ -463,7 +469,8 @@ def cell_css(kind: str) -> str:
     """Return the CSS of a highlighted table cell for the active theme.
 
     Args:
-        kind: ``"best"`` or ``"differ"``.
+        kind: ``"best"``, ``"differ"``, or ``"good"`` and ``"bad"`` for a
+            difference from the baseline that is better or worse.
     """
     return CELL_CSS["dark" if is_dark() else "light"][kind]
 
@@ -562,6 +569,70 @@ def go_to(view: str, **state) -> None:
     st.session_state.view = view
     for key, value in state.items():
         st.session_state[key] = value
+
+
+def link_params(params: dict) -> dict[str, list[str]]:
+    """Drop empty values and make every value a list, as in the URL.
+
+    Args:
+        params: Query parameters; values are strings, lists or None.
+
+    Returns:
+        The parameters to put in the URL.
+    """
+    out = {}
+    for key, value in params.items():
+        values = value if isinstance(value, list) else [value]
+        values = [str(v) for v in values if v not in (None, "")]
+        if values:
+            out[key] = values
+    return out
+
+
+def update_link(params: dict) -> None:
+    """Show the current view's options in the address bar.
+
+    Args:
+        params: Query parameters (see :func:`link_params`).
+    """
+    wanted = link_params(params)
+    current = {k: st.query_params.get_all(k) for k in st.query_params}
+    if current != wanted:
+        st.query_params.from_dict(wanted)
+
+
+def open_link(data: dict) -> None:
+    """Open the comparison a shared link describes, once per session.
+
+    Args:
+        data: Output of :func:`load_data`, plus ``by_id``.
+    """
+    if st.session_state.get("link_opened"):
+        return
+    st.session_state.link_opened = True
+    params = st.query_params
+    if params.get("view") != "compare":
+        return
+    st.session_state.view = "Compare"
+    ids = {r["name"]: r["id"] for r in data["by_id"].values()}
+    runs = [ids[n] for n in params.get_all("run") if n in ids]
+    if runs:
+        st.session_state.compare_runs = runs
+        source = "Selected runs"
+    else:
+        source = params.get("group", "Runs shown in Experiments")
+    st.session_state.cmp_source = source
+    if "show" in params:
+        st.session_state.cmp_show = params.get_all("show")
+    if "metric" in params:
+        st.session_state[f"sel_{source}"] = params["metric"]
+    if "at" in params:
+        st.session_state[f"report_{source}"] = params.get_all("at")
+    st.session_state[f"agg_{source}"] = params.get("agg") == "1"
+    if "seeds" in params:
+        st.session_state[f"seeds_{source}"] = params["seeds"]
+    if "baseline" in params:
+        st.session_state[f"base_{source}"] = params["baseline"]
 
 
 def tag_counts(metrics: pl.DataFrame, run_ids: list[int]) -> dict[str, int]:
@@ -903,6 +974,7 @@ def styled(
     highlight: dict[str, set[int]] | None = None,
     formats: dict | None = None,
     css: str | None = None,
+    cells: dict[str, list[str]] | None = None,
 ):
     """Turn a finished polars table into a Styler for ``st.dataframe``.
 
@@ -916,6 +988,8 @@ def styled(
         formats: Column name -> function that formats a cell for display.
         css: The CSS applied to highlighted cells; the best-value
             highlight of the active theme by default.
+        cells: Column name -> CSS of each cell, applied after the
+            highlight (e.g. green or orange differences on a best cell).
 
     Returns:
         A pandas Styler.
@@ -928,6 +1002,8 @@ def styled(
     css = css or cell_css("best")
     for column, rows in (highlight or {}).items():
         marks = [css if i in rows else "" for i in range(len(table))]
+        styler = styler.apply(lambda _, m=marks: m, subset=[column])
+    for column, marks in (cells or {}).items():
         styler = styler.apply(lambda _, m=marks: m, subset=[column])
     for column, func in (formats or {}).items():
         styler = styler.format(func, subset=[column])
@@ -1857,9 +1933,11 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     key_mode, seed_regex = "name", settings["seed_regex"]
     if aggregate:
         a, b = st.columns([2, 3])
+        widget_state(f"seeds_{source}", ["name", "hparams"], "name")
         key_mode = a.radio(
             "Seeds share a config when…",
             ["name", "hparams"],
+            key=f"seeds_{source}",
             format_func={
                 "name": "names match without the seed",
                 "hparams": "hyperparameters match (except seed)",
@@ -1870,6 +1948,42 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             seed_regex = b.text_input(
                 "Seed pattern (regex)", value=settings["seed_regex"]
             )
+
+    def config_of(run: dict) -> str:
+        if key_mode == "name":
+            return an.seed_key(run["name"], seed_regex)
+        return an.hparam_key(run["hparams"])
+
+    # The baseline is a run, or a config when seeds are aggregated.
+    base_options = [
+        NO_BASELINE,
+        *dict.fromkeys(config_of(r) if aggregate else r["name"] for r in pool),
+    ]
+    widget_state(f"base_{source}", base_options, NO_BASELINE)
+    baseline = st.columns([2, 3])[0].selectbox(
+        "Baseline",
+        base_options,
+        key=f"base_{source}",
+        help="Numbers show their difference to this "
+        f"{'config' if aggregate else 'run'} in brackets: green is better "
+        "and orange is worse, following the metric's direction.",
+    )
+    # The address bar keeps these choices, so the URL reopens them.
+    link = {
+        "view": "compare",
+        **(
+            {"group": source}
+            if group is not None
+            else {"run": [r["name"] for r in pool]}
+        ),
+        "metric": sel,
+        "at": report,
+        "show": shown_cols,
+        "agg": "1" if aggregate else None,
+        "seeds": key_mode if aggregate else None,
+        "baseline": None if baseline == NO_BASELINE else baseline,
+    }
+    update_link(link)
 
     direction = an.direction_of(sel, directions)
     sel_rows = {
@@ -1894,11 +2008,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         for tag in report:
             series = db.load_series(conn, run["id"], tag)
             row[tag], _ = an.value_at_step(series, step or 0)
-        row["config"] = (
-            an.seed_key(run["name"], seed_regex)
-            if key_mode == "name"
-            else an.hparam_key(run["hparams"])
-        )
+        row["config"] = config_of(run)
         rows.append(row)
     conn.close()
     if not rows:
@@ -1939,7 +2049,11 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             shown_cols, data["properties"], {*columns, *labels.values()}
         )
         add_property_columns(columns, prop_cols, members)
-        highlight = {}
+        highlight, changes = {}, {}
+        configs = stats["config"].to_list()
+        base_row = configs.index(baseline) if baseline in configs else None
+        if base_row is not None:
+            columns["config"] = mark_baseline(configs, base_row)
         for c in value_cols:
             means = stats[f"{c}__mean"].to_list()
             stds = stats[f"{c}__std"].fill_null(0.0).to_list()
@@ -1947,6 +2061,13 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
                 f"{an.format_value(m)} ± {s:.2g}" if m is not None else ""
                 for m, s in zip(means, stds)
             ]
+            if base_row is not None:
+                columns[labels[c]], changes[labels[c]] = with_changes(
+                    columns[labels[c]],
+                    means,
+                    base_row,
+                    an.direction_of(c, directions),
+                )
             highlight[labels[c]] = best_rows(
                 means, an.direction_of(c, directions)
             )
@@ -1957,7 +2078,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             "err": stats[f"{sel}__std"].fill_null(0.0).to_list(),
         }
         show_table(
-            styled(shown, highlight, number_formats(prop_cols)),
+            styled(shown, highlight, number_formats(prop_cols), cells=changes),
             hide_index=True,
             height=table_height(shown.height),
             column_config={
@@ -1986,7 +2107,22 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         )
         add_property_columns(columns, prop_cols, [[r] for r in runs_here])
         columns["best step"] = df["best step"]
-        columns.update({labels[c]: df[c] for c in value_cols})
+        names = df["run"].to_list()
+        base_row = names.index(baseline) if baseline in names else None
+        changes = {}
+        if base_row is not None:
+            columns["run"] = mark_baseline(names, base_row)
+        for c in value_cols:
+            columns[labels[c]] = df[c]
+            if base_row is not None:
+                # The cells become text: the value, then the difference.
+                values = df[c].to_list()
+                columns[labels[c]], changes[labels[c]] = with_changes(
+                    [an.format_value(v) for v in values],
+                    values,
+                    base_row,
+                    an.direction_of(c, directions),
+                )
         shown = pl.DataFrame(columns)
         highlight = {
             labels[c]: best_rows(
@@ -1994,10 +2130,12 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             )
             for c in value_cols
         }
-        formats = {labels[c]: an.format_value for c in value_cols}
+        formats = (
+            {} if changes else {labels[c]: an.format_value for c in value_cols}
+        )
         formats.update(number_formats(prop_cols))
         show_table(
-            styled(shown, highlight, formats),
+            styled(shown, highlight, formats, cells=changes),
             hide_index=True,
             height=table_height(shown.height),
             column_config={
@@ -2014,6 +2152,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
                 an.format_value, return_dtype=pl.String
             )
             for c in value_cols
+            if not changes
         )
         chart = {
             "label": df["run"].to_list(),
@@ -2023,6 +2162,13 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         best_ids = df["id"][:1].to_list()
         n_configs = df.height
 
+    if base_row is not None:
+        st.caption(
+            f"In brackets: the difference to the baseline, {baseline}. "
+            "Green is better and orange is worse."
+        )
+    elif baseline != NO_BASELINE:
+        st.caption(f"The baseline, {baseline}, didn't log {sel}.")
     best_label = chart["label"][0] if chart["label"] else ""
     best_value = chart["value"][0] if chart["value"] else None
     c1, c2, c3, c4 = cards.columns(4)
@@ -2102,6 +2248,52 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     with bar.popover("LaTeX source", icon=":material/code:", type="tertiary"):
         st.code(latex, language="latex")
     tensorboard_panel()
+
+
+def mark_baseline(labels: list[str], base_row: int) -> list[str]:
+    """Add "(baseline)" to the baseline's name, as a table column.
+
+    Args:
+        labels: Run or config names, in table order.
+        base_row: Position of the baseline.
+
+    Returns:
+        The names, the baseline's marked.
+    """
+    return [
+        f"{label} (baseline)" if i == base_row else label
+        for i, label in enumerate(labels)
+    ]
+
+
+def with_changes(
+    texts: list[str], values: list, base_row: int, direction: str
+) -> tuple[list[str], list[str]]:
+    """Add each value's difference to the baseline's, in brackets.
+
+    Args:
+        texts: The cells as shown, in table order.
+        values: The numbers behind them (means when seeds are aggregated).
+        base_row: Position of the baseline.
+        direction: The metric's direction, ``"max"`` or ``"min"``.
+
+    Returns:
+        The new cells, and the CSS of each cell: green when the difference
+        is better, orange when it is worse.
+    """
+    cells, css = [], []
+    for i, (text, value) in enumerate(zip(texts, values)):
+        diff = (
+            None if i == base_row else an.change_from(value, values[base_row])
+        )
+        if diff is None:
+            cells.append(text)
+            css.append("")
+            continue
+        cells.append(f"{text}  ({an.format_change(diff)})")
+        kind = an.change_kind(diff, direction)
+        css.append(cell_css(kind) if kind else "")
+    return cells, css
 
 
 def compare_hparams(
@@ -3854,6 +4046,7 @@ def main() -> None:
         }
         for r in runs.iter_rows(named=True)
     }
+    open_link(data)
     if st.session_state.get("view") not in VIEWS:
         st.session_state.view = "Experiments"
     if "filters" not in st.session_state:
@@ -3872,6 +4065,8 @@ def main() -> None:
         )
         return
     view = st.session_state.view
+    if view != "Compare" and len(st.query_params):
+        st.query_params.clear()
     page_header(view)
     if st.session_state.pop("help_open", False):
         help_dialog(st.session_state.get("help_topic", view))

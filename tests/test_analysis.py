@@ -175,3 +175,19 @@ def test_explorer_axis_numeric_log_and_categories():
 def test_perplexity_has_no_lower_is_better_guess():
     assert an.guess_direction("val/perplexity") == "max"
     assert an.guess_direction("val/loss") == "min"
+
+
+def test_baseline_changes():
+    assert an.change_from(0.92, 0.9) == pytest.approx(0.02)
+    assert an.change_from(None, 0.9) is None
+    assert an.change_from(0.9, float("nan")) is None
+    assert an.format_change(0.02) == "+0.02"
+    assert an.format_change(-0.5) == "−0.5"
+    assert an.format_change(0.0) == "±0"
+    assert an.format_change(None) == ""
+    assert an.change_kind(0.02, "max") == "good"
+    assert an.change_kind(0.02, "min") == "bad"
+    assert an.change_kind(-0.1, "min") == "good"
+    assert an.change_kind(0.0, "max") == ""
+    tex = an.to_latex(pl.DataFrame({"acc": ["0.9  (−0.01)"]}), set())
+    assert "$-$0.01" in tex

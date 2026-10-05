@@ -97,6 +97,12 @@ chosen (the "checkpoint"). Every metric in **Metrics at that step** is shown
 scores should be reported: picking the best test value on its own would be
 cherry-picking.
 
+**Baseline.** Pick a run (or, with seeds aggregated, a config) to show
+each number's difference to it in brackets, e.g. `0.9414  (+0.0147)`.
+Green means better and orange means worse, following the metric's
+direction. The differences are also in the exports. With *None*, the
+default, the table shows no differences.
+
 **Aggregate seeds.** Collapses runs that differ only by their seed into one
 row with mean ± standard deviation and the number of runs (`n`). Two ways to
 decide that runs share a config:
@@ -123,6 +129,12 @@ is best. The selection metric is saved with the group.
 
 **Open in TensorBoard** (in the toolbar) starts TensorBoard on exactly the
 compared runs. See the *TensorBoard* topic.
+
+The link in the address bar opens this exact comparison, so it can be
+shared or bookmarked. It keeps the group (or the runs, when they aren't a
+group), the selection metric, the metrics at that step, the **Show**
+columns, the seed options and the baseline. Opening it asks for the
+password first if one is set.
 """,
     "Curves": """
 Overlays training curves of up to eight runs.

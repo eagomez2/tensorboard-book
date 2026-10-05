@@ -524,6 +524,52 @@ def format_value(x) -> str:
     return f"{x:.4g}"
 
 
+def change_from(value, base) -> float | None:
+    """Return ``value - base``, or None if either is missing.
+
+    Args:
+        value: A number or None.
+        base: The baseline's number or None.
+
+    Returns:
+        The difference, or None.
+    """
+    if is_missing(value) or is_missing(base):
+        return None
+    return float(value) - float(base)
+
+
+def format_change(diff) -> str:
+    """Format a difference from the baseline with its sign, e.g. ``+0.012``.
+
+    Args:
+        diff: The difference (missing gives an empty string).
+
+    Returns:
+        ``+x`` or ``−x`` (with a minus sign), or ``±0``.
+    """
+    if is_missing(diff):
+        return ""
+    if math.isclose(diff, 0, abs_tol=1e-12):
+        return "±0"
+    return ("+" if diff > 0 else "−") + format_value(abs(diff))
+
+
+def change_kind(diff, direction: str) -> str:
+    """Tell whether a difference from the baseline is better or worse.
+
+    Args:
+        diff: The difference (value minus baseline), or None.
+        direction: ``"max"`` or ``"min"``.
+
+    Returns:
+        ``"good"``, ``"bad"``, or ``""`` for no difference.
+    """
+    if is_missing(diff) or math.isclose(diff, 0, abs_tol=1e-12):
+        return ""
+    return "good" if (diff > 0) == (direction == "max") else "bad"
+
+
 def to_markdown(df: pl.DataFrame) -> str:
     """Render a table as GitHub-flavored Markdown.
 
@@ -583,7 +629,7 @@ def to_latex(
         cells = []
         for column, value in zip(df.columns, row):
             text = "" if value is None else value
-            cell = _tex(text).replace("±", r"$\pm$")
+            cell = _tex(text).replace("±", r"$\pm$").replace("−", "$-$")
             if (i, column) in bold:
                 cell = rf"\textbf{{{cell}}}"
             cells.append(cell)

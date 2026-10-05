@@ -36,7 +36,7 @@ tensorboard-book /path/to/runs
 The command first indexes the folder, then prints the address of the app:
 
 ```text
-  tensorboard-book 0.7.0
+  tensorboard-book 0.7.1
 
   Runs folder: /path/to/runs
   Database: /path/to/runs/.tensorboard-book/index.db

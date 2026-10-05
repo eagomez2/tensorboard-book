@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-2F6BD8" alt="Python 3.10 to 3.13"></a>
-  <a href="pyproject.toml"><img src="https://img.shields.io/badge/version-0.7.0-0F5F5A" alt="version 0.7.0"></a>
+  <a href="pyproject.toml"><img src="https://img.shields.io/badge/version-0.7.1-0F5F5A" alt="version 0.7.1"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0F5F5A" alt="MIT license"></a>
   <a href="https://eagomez2.github.io/tensorboard-book/"><img src="https://img.shields.io/badge/docs-online-0F5F5A" alt="documentation"></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
@@ -68,4 +68,4 @@ endorsed by Google or the TensorFlow team.
 
 ## Author
 
-Esteban Gomez ([esteban.gomezmellado@aalto.fi](mailto:esteban.gomezmellado@aalto.fi))
+Esteban Gómez ([esteban.gomezmellado@aalto.fi](mailto:esteban.gomezmellado@aalto.fi))

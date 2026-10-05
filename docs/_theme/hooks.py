@@ -7,8 +7,9 @@
   ``tensorboard-book COMMAND`` (``<!-- cli: -->`` for the main command).
 - The logo and the fonts are published from the package, so the site uses
   the same files as the app.
-- The package version is shown next to the site name, and the footer
-  shows the copyright years as ``--version`` does.
+- The footer shows the copyright years as ``--version`` does.
+- Help text written for the app gets the blank line that Python-Markdown
+  needs before a list, so its lists render as lists.
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from pathlib import Path
 
 from mkdocs.structure.files import File
 
-from tensorboard_book import __version__, cli
+from tensorboard_book import cli
 from tensorboard_book.helptext import HELP
 
 PACKAGE = Path(__file__).parents[2] / "src" / "tensorboard_book"
@@ -45,11 +46,15 @@ TOPIC_PAGES = {
 HELP_MARK = re.compile(r"<!-- help: (.+?) -->")
 CLI_MARK = re.compile(r"<!-- cli:\s*(\S*)\s*-->")
 TOPIC_REF = re.compile(r"the \*([^*]+)\* topic")
+# A line of text directly followed by a list. Streamlit renders the list,
+# but Python-Markdown needs a blank line between them.
+LIST_START = re.compile(
+    r"^(?![-*] |\d+\. )(\S.*)\n(?=[-*] |\d+\. )", re.MULTILINE
+)
 
 
 def on_config(config):
-    """Make the package version available to the templates."""
-    config.extra["version_text"] = __version__
+    """Set the footer's copyright line."""
     config["copyright"] = (
         f"© {cli.copyright_years()} {config['site_author']}."
         " <code>tensorboard-book</code> is released under the MIT License."
@@ -77,6 +82,7 @@ def on_page_markdown(markdown, page, config, files):
     def help_topic(match: re.Match) -> str:
         text = HELP[match.group(1)].strip()
         text = TOPIC_REF.sub(link, text)
+        text = LIST_START.sub(r"\1\n\n", text)
         # The app points to the documentation; link the section.
         target = posixpath.relpath("deployment.md", here)
         return text.replace(

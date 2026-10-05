@@ -14,8 +14,7 @@ tensorboard-book -v, --version                           print the version
 ```
 
 Streamlit prints the address to open. Usage statistics are off, and the app
-doesn't watch its source files for changes (a `.streamlit/config.toml` in the
-repository does the same for `streamlit run` during development).
+doesn't watch its source files for changes.
 
 Starting the app first scans the folder in the terminal, using up to four
 processes (`--workers`), so the page opens with everything indexed. Rescans
@@ -35,10 +34,8 @@ example:
 
 ```console
 $ tensorboard-book --version
-tensorboard-book version 0.7.0 2026
+tensorboard-book version 0.7.1 2026
 ```
-
-From 2027 on it shows a range, such as `2026 - 2027`.
 
 <!-- cli: -->
 

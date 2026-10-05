@@ -6,7 +6,7 @@ site_name: TensorBoard Book
 site_description: >-
   Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare
   and browse artifacts.
-site_author: Esteban Gomez
+site_author: Esteban Gómez
 repo_url: https://github.com/eagomez2/tensorboard-book
 repo_name: tensorboard-book
 edit_uri: ""

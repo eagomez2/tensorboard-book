@@ -1,12 +1,12 @@
 [project]
 name = "tensorboard-book"
-version = "0.7.0"
+version = "0.7.1"
 description = "Bookkeeping for folders of TensorBoard runs: index, tag, group, compare and browse artifacts."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "Esteban Gomez", email = "esteban.gomezmellado@aalto.fi" },
+    { name = "Esteban Gómez", email = "esteban.gomezmellado@aalto.fi" },
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,7 +31,7 @@ dependencies = [
 
 [project.urls]
 Source = "https://github.com/eagomez2/tensorboard-book"
-Documentation = "https://github.com/eagomez2/tensorboard-book/tree/main/docs"
+Documentation = "https://eagomez2.github.io/tensorboard-book/"
 
 [project.scripts]
 tensorboard-book = "tensorboard_book.cli:main"
