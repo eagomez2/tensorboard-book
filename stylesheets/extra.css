@@ -222,22 +222,6 @@ body { background-color: var(--md-default-bg-color); }
 .md-footer__link { color: var(--tb-text); }
 .md-copyright { color: var(--md-default-fg-color--light); }
 
-/* The version pill after the site name (the text is set in main.html). */
-.md-header__topic:first-child .md-ellipsis::after {
-  display: inline-block;
-  margin-left: 0.5rem;
-  padding: 0 0.45rem;
-  border-radius: 0.6rem;
-  background-color: var(--tb-bg-2);
-  color: var(--md-default-fg-color--light);
-  font-family: var(--md-text-font-family);
-  font-size: 0.6rem;
-  font-weight: 500;
-  line-height: 1.5;
-  vertical-align: 0.2em;
-}
-.md-header__topic:first-child .md-ellipsis { overflow: visible; }
-
 /* The GitHub link in the header. */
 .md-source { color: var(--tb-text); }
 .md-source__fact { color: var(--md-default-fg-color--light); }

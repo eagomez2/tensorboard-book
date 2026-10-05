@@ -9,7 +9,7 @@
         <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
       
       
-        <meta name="author" content="Esteban Gomez">
+        <meta name="author" content="Esteban Gómez">
       
       
         <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/views/compare/">
@@ -57,12 +57,6 @@
 
     
     
-  <style>
-    .md-header__topic:first-child .md-ellipsis::after {
-      content: "0.7.0";
-    }
-  </style>
-
   </head>
   
   
@@ -1079,29 +1073,43 @@ chosen (the "checkpoint"). Every metric in <strong>Metrics at that step</strong>
 <em>at that same step</em>, using the logged value closest to it. That's how test
 scores should be reported: picking the best test value on its own would be
 cherry-picking.</p>
+<p><strong>Baseline.</strong> Pick a run (or, with seeds aggregated, a config) to show
+each number's difference to it in brackets, e.g. <code>0.9414  (+0.0147)</code>.
+Green means better and orange means worse, following the metric's
+direction. The differences are also in the exports. With <em>None</em>, the
+default, the table shows no differences.</p>
 <p><strong>Aggregate seeds.</strong> Collapses runs that differ only by their seed into one
 row with mean ± standard deviation and the number of runs (<code>n</code>). Two ways to
-decide that runs share a config:
-- their names match after removing the seed pattern (<code>_seed1</code>, <code>-seed-2</code>,
-  and so on). The pattern is a regular expression that can be edited.
-- all hyperparameters match except the ones named <code>seed</code>.</p>
-<p><strong>Below the table:</strong>
-- a dot plot of the selection metric (with error bars when aggregated).
-- <em>What differs between these runs</em>: the hyperparameters that vary, with
-  cells highlighted where they differ from the best run.
-- <em>Which settings lead to the best result</em>: pick a <strong>Target metric</strong> and
+decide that runs share a config:</p>
+<ul>
+<li>their names match after removing the seed pattern (<code>_seed1</code>, <code>-seed-2</code>,
+  and so on). The pattern is a regular expression that can be edited.</li>
+<li>all hyperparameters match except the ones named <code>seed</code>.</li>
+</ul>
+<p><strong>Below the table:</strong></p>
+<ul>
+<li>a dot plot of the selection metric (with error bars when aggregated).</li>
+<li><em>What differs between these runs</em>: the hyperparameters that vary, with
+  cells highlighted where they differ from the best run.</li>
+<li><em>Which settings lead to the best result</em>: pick a <strong>Target metric</strong> and
   the <strong>Settings</strong> (hyperparameters and properties) to see, like
   TensorBoard's HParams dashboard, a parallel coordinates plot and the
   target against each setting, with the best run ringed. The parallel
   coordinates plot has one line per run, colored by the target. Drag along
   an axis to keep only the runs in that range, or drag an axis name to
   reorder the axes. Wide-ranging numbers such as learning rates use a log
-  scale, and missing values are shown as a dash.
-- exports as CSV, Markdown or LaTeX (with the best value in bold).</p>
+  scale, and missing values are shown as a dash.</li>
+<li>exports as CSV, Markdown or LaTeX (with the best value in bold).</li>
+</ul>
 <p>The cards on top show how many runs and configs are compared and which one
 is best. The selection metric is saved with the group.</p>
 <p><strong>Open in TensorBoard</strong> (in the toolbar) starts TensorBoard on exactly the
 compared runs. See <a href="../../topics/tensorboard/">TensorBoard</a>.</p>
+<p>The link in the address bar opens this exact comparison, so it can be
+shared or bookmarked. It keeps the group (or the runs, when they aren't a
+group), the selection metric, the metrics at that step, the <strong>Show</strong>
+columns, the seed options and the baseline. Opening it asks for the
+password first if one is set.</p>
 <h2 id="which-settings-lead-to-the-best-result">Which settings lead to the best result<a class="headerlink" href="#which-settings-lead-to-the-best-result" title="Permanent link">&para;</a></h2>
 <p><img alt="Parallel coordinates and the target metric against each setting" class="tb-shot" src="../../images/hparams-light.webp#only-light" />
 <img alt="Parallel coordinates and the target metric against each setting" class="tb-shot" src="../../images/hparams-dark.webp#only-dark" /></p>
@@ -1180,7 +1188,7 @@ compared runs. See <a href="../../topics/tensorboard/">TensorBoard</a>.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      © 2026 Esteban Gomez. <code>tensorboard-book</code> is released under the MIT License.
+      © 2026 Esteban Gómez. <code>tensorboard-book</code> is released under the MIT License.
     </div>
   
   

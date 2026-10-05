@@ -9,7 +9,7 @@
         <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
       
       
-        <meta name="author" content="Esteban Gomez">
+        <meta name="author" content="Esteban Gómez">
       
       
         <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/cli/">
@@ -55,12 +55,6 @@
 
     
     
-  <style>
-    .md-header__topic:first-child .md-ellipsis::after {
-      content: "0.7.0";
-    }
-  </style>
-
   </head>
   
   
@@ -1261,8 +1255,7 @@ tensorboard-book import-annotations ROOT FILE            merge annotations from 
 tensorboard-book -v, --version                           print the version
 </code></pre></div>
 <p>Streamlit prints the address to open. Usage statistics are off, and the app
-doesn't watch its source files for changes (a <code>.streamlit/config.toml</code> in the
-repository does the same for <code>streamlit run</code> during development).</p>
+doesn't watch its source files for changes.</p>
 <p>Starting the app first scans the folder in the terminal, using up to four
 processes (<code>--workers</code>), so the page opens with everything indexed. Rescans
 from the app (the <strong>Rescan</strong> button and <strong>Auto</strong>) run inside the app in a
@@ -1275,9 +1268,8 @@ with 6.6 million scalar values (290 MB) take about 35 s with one worker and
 <p><code>-v</code> or <code>--version</code> prints the version and the years of the project, for
 example:</p>
 <div class="highlight"><pre><span></span><code><span class="gp">$ </span>tensorboard-book<span class="w"> </span>--version
-<span class="go">tensorboard-book version 0.7.0 2026</span>
+<span class="go">tensorboard-book version 0.7.1 2026</span>
 </code></pre></div>
-<p>From 2027 on it shows a range, such as <code>2026 - 2027</code>.</p>
 <div class="highlight"><pre><span></span><code>usage: tensorboard-book [-h] [-v]
                         {serve,scan,view,hash-password,demo,export-annotations,import-annotations}
                         ...
@@ -1458,7 +1450,7 @@ options:
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      © 2026 Esteban Gomez. <code>tensorboard-book</code> is released under the MIT License.
+      © 2026 Esteban Gómez. <code>tensorboard-book</code> is released under the MIT License.
     </div>
   
   

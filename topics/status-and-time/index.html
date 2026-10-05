@@ -9,7 +9,7 @@
         <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
       
       
-        <meta name="author" content="Esteban Gomez">
+        <meta name="author" content="Esteban Gómez">
       
       
         <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/topics/status-and-time/">
@@ -57,12 +57,6 @@
 
     
     
-  <style>
-    .md-header__topic:first-child .md-ellipsis::after {
-      content: "0.7.0";
-    }
-  </style>
-
   </head>
   
   
@@ -1066,20 +1060,24 @@
 
 <h1 id="status-and-run-time">Status and run time<a class="headerlink" href="#status-and-run-time" title="Permanent link">&para;</a></h1>
 <p><strong>Active or stopped.</strong> TensorBoard logs don't record that a run finished,
-so the status says what can be known:
-- <strong>Active</strong>: an event was written recently. The default is within the
+so the status says what can be known:</p>
+<ul>
+<li><strong>Active</strong>: an event was written recently. The default is within the
   last 5 hours, so a run whose epochs take hours still counts as active.
-  Change it in Manage → Settings.
-- <strong>Stopped</strong>: nothing written for longer than that. The run may have
-  finished, crashed, or been killed.
-- <strong>Missing</strong>: the folder is gone. Its annotations are kept.
-- Runs that logged NaN or inf values get a red <em>NaN/inf</em> badge.</p>
-<p><strong>Run time:</strong>
-- <strong>Span</strong>: time from the first to the last event.
-- <strong>Compute</strong>: span minus pauses. A pause is a silence longer than 6 h by
+  Change it in Manage → Settings.</li>
+<li><strong>Stopped</strong>: nothing written for longer than that. The run may have
+  finished, crashed, or been killed.</li>
+<li><strong>Missing</strong>: the folder is gone. Its annotations are kept.</li>
+<li>Runs that logged NaN or inf values get a red <em>NaN/inf</em> badge.</li>
+</ul>
+<p><strong>Run time:</strong></p>
+<ul>
+<li><strong>Span</strong>: time from the first to the last event.</li>
+<li><strong>Compute</strong>: span minus pauses. A pause is a silence longer than 6 h by
   default. Set the pause above your longest time between two logged values
-  (e.g. one epoch), or it would cut normal training into pieces.
-- <strong>Throughput</strong>: steps per second of compute.</p>
+  (e.g. one epoch), or it would cut normal training into pieces.</li>
+<li><strong>Throughput</strong>: steps per second of compute.</li>
+</ul>
 <h2 id="in-more-detail">In more detail<a class="headerlink" href="#in-more-detail" title="Permanent link">&para;</a></h2>
 <p>TensorBoard logs have no "finished" marker, so these are estimates from the
 event timestamps.</p>
@@ -1168,7 +1166,7 @@ event timestamps.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      © 2026 Esteban Gomez. <code>tensorboard-book</code> is released under the MIT License.
+      © 2026 Esteban Gómez. <code>tensorboard-book</code> is released under the MIT License.
     </div>
   
   

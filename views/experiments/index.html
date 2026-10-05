@@ -9,7 +9,7 @@
         <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
       
       
-        <meta name="author" content="Esteban Gomez">
+        <meta name="author" content="Esteban Gómez">
       
       
         <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/views/experiments/">
@@ -57,12 +57,6 @@
 
     
     
-  <style>
-    .md-header__topic:first-child .md-ellipsis::after {
-      content: "0.7.0";
-    }
-  </style>
-
   </head>
   
   
@@ -1001,31 +995,35 @@
 <p><img alt="The Experiments view" class="tb-shot" src="../../images/experiments-light.webp#only-light" />
 <img alt="The Experiments view" class="tb-shot" src="../../images/experiments-dark.webp#only-dark" /></p>
 <p>The main table, with one row per run.</p>
-<p><strong>Columns.</strong> Pick them in the three boxes at the top:
-- <strong>Metrics</strong>: the value per run is the <em>best</em> one (highest or lowest,
+<p><strong>Columns.</strong> Pick them in the three boxes at the top:</p>
+<ul>
+<li><strong>Metrics</strong>: the value per run is the <em>best</em> one (highest or lowest,
   depending on the metric's direction, shown by ↑ and ↓) or the <em>last</em> one,
   depending on the <strong>Value</strong> switch. The best value in each column is
-  highlighted. Your choice is saved per group.
-- <strong>Hyperparameters</strong>: by default, the ones that differ between the runs
-  shown.
-- <strong>Show</strong>: extra columns such as status, steps, compute time, start, tags
-  (as colored pills), groups and notes.</p>
+  highlighted. Your choice is saved per group.</li>
+<li><strong>Hyperparameters</strong>: by default, the ones that differ between the runs
+  shown.</li>
+<li><strong>Show</strong>: extra columns such as status, steps, compute time, start, tags
+  (as colored pills), groups and notes.</li>
+</ul>
 <p><strong>Filter.</strong> Narrow the table with conditions, e.g.
 <code>optimizer.lr &lt; 1e-3 and val/acc &gt; 0.9</code>. See <a href="../../topics/filters/">Filters</a>.</p>
-<p><strong>Actions.</strong> Tick rows and use the toolbar under the table:
-- <strong>Plot curves</strong> opens the selected runs in Curves.
-- <strong>Compare</strong> (two or more runs) opens them in Compare, even if they aren't
-  in a group.
-- <strong>Details</strong> (one run) opens it in Run details.
-- <strong>Open in TensorBoard</strong> starts TensorBoard on the selected runs (see the
-  <em>TensorBoard</em> topic).
-- <strong>Group</strong> adds them to a group (or a new one) or removes them from the
-  current one.
-- <strong>Tag</strong> adds or removes tags.
-- <strong>Property</strong> sets or clears a custom property on all selected runs.
-- <strong>Star</strong> and <strong>Archive</strong>: archived runs are hidden unless you turn on
-  <em>Show archived</em> in the sidebar. Their files are untouched.
-- <strong>Export CSV</strong> saves the table as shown.</p>
+<p><strong>Actions.</strong> Tick rows and use the toolbar under the table:</p>
+<ul>
+<li><strong>Plot curves</strong> opens the selected runs in Curves.</li>
+<li><strong>Compare</strong> (two or more runs) opens them in Compare, even if they aren't
+  in a group.</li>
+<li><strong>Details</strong> (one run) opens it in Run details.</li>
+<li><strong>Open in TensorBoard</strong> starts TensorBoard on the selected runs (see the
+  <em>TensorBoard</em> topic).</li>
+<li><strong>Group</strong> adds them to a group (or a new one) or removes them from the
+  current one.</li>
+<li><strong>Tag</strong> adds or removes tags.</li>
+<li><strong>Property</strong> sets or clears a custom property on all selected runs.</li>
+<li><strong>Star</strong> and <strong>Archive</strong>: archived runs are hidden unless you turn on
+  <em>Show archived</em> in the sidebar. Their files are untouched.</li>
+<li><strong>Export CSV</strong> saves the table as shown.</li>
+</ul>
 <p><strong>The numbers on top.</strong> The number of runs shown, how many are active (see
 the ⓘ next to <em>Active now</em>), total compute time, and disk usage.</p>
 
@@ -1103,7 +1101,7 @@ the ⓘ next to <em>Active now</em>), total compute time, and disk usage.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      © 2026 Esteban Gomez. <code>tensorboard-book</code> is released under the MIT License.
+      © 2026 Esteban Gómez. <code>tensorboard-book</code> is released under the MIT License.
     </div>
   
   

@@ -9,7 +9,7 @@
         <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
       
       
-        <meta name="author" content="Esteban Gomez">
+        <meta name="author" content="Esteban Gómez">
       
       
         <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/views/run-details/">
@@ -57,12 +57,6 @@
 
     
     
-  <style>
-    .md-header__topic:first-child .md-ellipsis::after {
-      content: "0.7.0";
-    }
-  </style>
-
   </head>
   
   
@@ -1009,17 +1003,19 @@ event, and disk size.</p>
 next to the badges, change tags, groups, star, archive flag, notes and
 custom properties in the form, and press <strong>Save</strong>. Property values also
 show as purple badges.</p>
-<p><strong>Tabs:</strong>
-- <strong>Artifacts</strong>: every file in the run folder except event files. Select a
+<p><strong>Tabs:</strong></p>
+<ul>
+<li><strong>Artifacts</strong>: every file in the run folder except event files. Select a
   file to preview it (images, text and config files, CSV/TSV tables, audio,
   video) and download it. Select several to download a zip. For text
   files, pick another run to see a diff of the same file, e.g.
-  <code>config.yaml</code>.
-- <strong>Metrics</strong>: every scalar with best, best step, last, min, max, number of
-  points and NaN/inf count.
-- <strong>Hyperparameters</strong>: the flattened config and where each value came from.
-- <strong>Text</strong>: text summaries (e.g. from <code>add_text</code>).
-- <strong>Timing</strong>: activity segments and the pauses between them.</p>
+  <code>config.yaml</code>.</li>
+<li><strong>Metrics</strong>: every scalar with best, best step, last, min, max, number of
+  points and NaN/inf count.</li>
+<li><strong>Hyperparameters</strong>: the flattened config and where each value came from.</li>
+<li><strong>Text</strong>: text summaries (e.g. from <code>add_text</code>).</li>
+<li><strong>Timing</strong>: activity segments and the pauses between them.</li>
+</ul>
 <p>The command to open this run in TensorBoard is at the bottom of the Metrics
 tab.</p>
 
@@ -1097,7 +1093,7 @@ tab.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      © 2026 Esteban Gomez. <code>tensorboard-book</code> is released under the MIT License.
+      © 2026 Esteban Gómez. <code>tensorboard-book</code> is released under the MIT License.
     </div>
   
   
