@@ -1,0 +1,102 @@
+# Documentation site. Build it with:
+#   uv run --group docs mkdocs build --strict    (or "serve" to preview)
+# The in-app help and the --help of each command are filled in from the
+# package (see docs/_theme/hooks.py), so the site and the app say the same.
+site_name: TensorBoard Book
+site_description: >-
+  Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare
+  and browse artifacts.
+site_author: Esteban Gómez
+repo_url: https://github.com/eagomez2/tensorboard-book
+repo_name: tensorboard-book
+edit_uri: ""
+site_url: https://eagomez2.github.io/tensorboard-book/
+
+docs_dir: docs
+validation:
+  anchors: warn
+exclude_docs: |
+  _theme/
+
+theme:
+  name: material
+  custom_dir: docs/_theme
+  # The fonts are the app's own, bundled with the package (see the hooks).
+  font: false
+  favicon: assets/logo.svg
+  icon:
+    repo: material/github
+  # Starts in the system's light or dark mode; the toggle switches.
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - toc.follow
+
+extra:
+  social:
+    - icon: material/github
+      link: https://github.com/eagomez2/tensorboard-book
+      name: tensorboard-book on GitHub
+  generator: false
+
+hooks:
+  - docs/_theme/hooks.py
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.keys
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: install.md
+      - Quick start: quickstart.md
+      - Your runs folder: runs.md
+  - The views:
+      - views/index.md
+      - Experiments: views/experiments.md
+      - Compare: views/compare.md
+      - Curves: views/curves.md
+      - Timeline: views/timeline.md
+      - Run details: views/run-details.md
+      - Manage: views/manage.md
+  - Topics:
+      - Filters: topics/filters.md
+      - Status and run time: topics/status-and-time.md
+      - Properties: topics/properties.md
+      - Opening TensorBoard: topics/tensorboard.md
+      - Metric directions and settings: topics/settings.md
+  - Password and deployment: deployment.md
+  - Command line: cli.md

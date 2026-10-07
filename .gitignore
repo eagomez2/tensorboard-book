@@ -1,0 +1,14 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+site/
+.venv/
+# Local state created by the app inside a runs folder
+.tbook.db*
+tbook-demo/
+
+# macOS
+.DS_Store
