@@ -191,3 +191,9 @@ def test_baseline_changes():
     assert an.change_kind(0.0, "max") == ""
     tex = an.to_latex(pl.DataFrame({"acc": ["0.9  (−0.01)"]}), set())
     assert "$-$0.01" in tex
+
+
+def test_overlay_default_pairs_tags_with_the_same_leaf():
+    tags = ["val/acc", "train/loss", "val/loss", "train/lr", "lr"]
+    assert an.overlay_default(tags) == ["train/loss", "val/loss"]
+    assert an.overlay_default(["val/acc", "val/loss"]) == []
