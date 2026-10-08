@@ -146,6 +146,11 @@ Overlays training curves of up to eight runs.
 - **X axis**: steps, hours since the run started (to compare speed), or wall
   time.
 - **Log y**: logarithmic y axis.
+- **Overlay metrics**: below the charts, draws several metrics of the chosen
+  runs on one chart, to compare metrics on the same scale (for example
+  `train/loss` and `val/loss`). It starts with metrics that share a name
+  after the last `/`. **Color by** run or metric; the other one is told
+  apart by the line style.
 
 Long curves are thinned to at most 5000 points for plotting, always keeping
 the first, last, lowest and highest points. Values in tables are always

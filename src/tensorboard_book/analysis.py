@@ -223,6 +223,31 @@ def ema_smooth(values: np.ndarray, weight: float) -> np.ndarray:
     return out
 
 
+def overlay_default(tags: list[str], limit: int = 3) -> list[str]:
+    """Pick metrics worth overlaying: the first ones sharing a leaf name.
+
+    ``train/loss`` and ``val/loss`` share the leaf ``loss``, so they are on
+    the same scale and make a natural pair. Learning rates are skipped.
+
+    Args:
+        tags: Available tags, most common first.
+        limit: Maximum number to return.
+
+    Returns:
+        The tags with the most common shared leaf, or an empty list when
+        no two tags share one.
+    """
+    by_leaf: dict[str, list[str]] = {}
+    for tag in tags:
+        leaf = tag.lower().rsplit("/", 1)[-1]
+        if "lr" not in leaf:
+            by_leaf.setdefault(leaf, []).append(tag)
+    shared = [group for group in by_leaf.values() if len(group) > 1]
+    if not shared:
+        return []
+    return max(shared, key=len)[:limit]
+
+
 def _hparam_series(name: str, values: list) -> pl.Series:
     """Build one hyperparameter column with a type that fits every run.
 

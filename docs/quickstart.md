@@ -39,7 +39,8 @@ TensorBoard's HParams dashboard.
 
 ## 4. Look at curves and at one run
 
-- **Curves** overlays runs, with the same smoothing as TensorBoard.
+- **Curves** overlays runs, with the same smoothing as TensorBoard, and can
+  draw several metrics on one chart.
 - **Run details** shows one run. Pick `resnet_lr3e-3`: the **Timing** tab
   shows that it crashed and was resumed. The **Artifacts** tab shows its
   files.

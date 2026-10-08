@@ -2734,56 +2734,198 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
             series = db.load_series(conn, rid, tag)
             if series.is_empty():
                 continue
-            run = by_id[rid]
-            name = run["name"]
-            steps = series["step"].to_numpy()
-            values = series["value"].to_numpy()
-            if x_mode == "Step":
-                x = steps
-            elif x_mode == "Hours since start":
-                start = run["start_time"] or 0.0
-                x = (series["wall_time"].to_numpy() - start) / 3600
-            else:
-                x = to_local(series["wall_time"], tz)
-            if smoothing > 0:
-                fig.add_trace(
-                    go.Scatter(
-                        x=x,
-                        y=values,
-                        mode="lines",
-                        line={"color": colors[rid], "width": 1},
-                        opacity=0.25,
-                        legendgroup=name,
-                        showlegend=False,
-                        hoverinfo="skip",
-                    )
-                )
-            fig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=an.ema_smooth(values, smoothing),
-                    mode="lines" if len(values) > 2 else "lines+markers",
-                    name=name,
-                    legendgroup=name,
-                    line={"color": colors[rid], "width": 2},
-                    customdata=np.stack([steps, values], axis=-1),
-                    hovertemplate=f"{name}<br>step %{{customdata[0]:,.0f}}"
-                    "<br>value %{customdata[1]:.4g}<extra></extra>",
-                )
+            name = by_id[rid]["name"]
+            x = curve_x(series, by_id[rid], x_mode, tz)
+            add_curve(
+                fig,
+                x,
+                series,
+                smoothing,
+                color=colors[rid],
+                name=name,
+                hover=name,
             )
-        fig.update_layout(
-            title={"text": arrow(tag, directions), "font": {"size": 14}},
-            height=340,
-            margin={"l": 10, "r": 10, "t": 40, "b": 10},
-            hovermode="x unified" if x_mode != "Wall time" else "closest",
-            legend={"orientation": "h", "y": -0.2},
-            xaxis_title=None if x_mode == "Wall time" else x_mode.lower(),
-        )
-        if log_y:
-            fig.update_yaxes(type="log")
+        style_curves(fig, arrow(tag, directions), x_mode, log_y)
         with columns[k % 2]:
             st.plotly_chart(fig, key=f"curve_{tag}")
+    overlay_section(conn, data, chosen_runs, options, smoothing, x_mode, log_y)
     conn.close()
+
+
+# Line styles that tell overlaid curves of the same color apart.
+DASHES = ["solid", "dash", "dot", "dashdot", "longdash", "longdashdot"]
+
+
+def overlay_section(
+    conn,
+    data: dict,
+    run_ids: list[int],
+    options: list[str],
+    smoothing: float,
+    x_mode: str,
+    log_y: bool,
+) -> None:
+    """Draw several metrics of the chosen runs on one shared chart.
+
+    Args:
+        conn: Open database connection.
+        data: Output of :func:`load_data`, plus ``by_id``.
+        run_ids: Runs to plot.
+        options: Metrics the runs logged.
+        smoothing: EMA weight from the Smoothing slider.
+        x_mode: Value of the X axis control.
+        log_y: Whether the y axis is logarithmic.
+    """
+    directions, by_id = data["directions"], data["by_id"]
+    st.markdown("#### Overlay metrics")
+    st.caption(
+        "Several metrics on one chart, for metrics on the same scale "
+        "(train and validation loss, or accuracies on different splits)."
+    )
+    widget_state("overlay_metrics", options, an.overlay_default(options))
+    c1, c2 = st.columns([5, 2])
+    tags = c1.multiselect(
+        "Metrics to overlay",
+        options,
+        key="overlay_metrics",
+        max_selections=len(DASHES),
+        format_func=lambda t: arrow(t, directions),
+        placeholder="Choose two or more metrics",
+    )
+    color_by = c2.segmented_control(
+        "Color by",
+        ["Run", "Metric"],
+        default="Metric" if len(run_ids) == 1 else "Run",
+        required=True,
+        key="overlay_color_by",
+        help="The other one is told apart by the line style.",
+    )
+    if not tags:
+        st.info("Choose the metrics to draw on one chart.")
+        return
+    run_colors_ = run_colors(run_ids)
+    metric_colors = dict(zip(tags, palette()))
+    one_run = len(run_ids) == 1
+    tz = viewer_tz()
+    fig = go.Figure()
+    for i, rid in enumerate(run_ids):
+        run = by_id[rid]
+        for j, tag in enumerate(tags):
+            series = db.load_series(conn, rid, tag)
+            if series.is_empty():
+                continue
+            if color_by == "Run":
+                color, dash = run_colors_[rid], DASHES[j]
+            else:
+                color, dash = metric_colors[tag], DASHES[i % len(DASHES)]
+            label = tag if one_run else f"{run['name']} · {tag}"
+            add_curve(
+                fig,
+                curve_x(series, run, x_mode, tz),
+                series,
+                smoothing,
+                color=color,
+                name=label,
+                hover=f"{run['name']}<br>{tag}",
+                dash=dash,
+            )
+    title = " vs ".join(arrow(t, directions) for t in tags)
+    style_curves(fig, title, x_mode, log_y, height=460)
+    st.plotly_chart(fig, key="curve_overlay")
+
+
+def curve_x(series: pl.DataFrame, run: dict, x_mode: str, tz):
+    """Return the x values of a curve for the chosen X axis.
+
+    Args:
+        series: ``step``, ``value`` and ``wall_time`` of one metric.
+        run: The run the series belongs to.
+        x_mode: ``"Step"``, ``"Hours since start"`` or ``"Wall time"``.
+        tz: Viewer time zone, for wall time.
+    """
+    if x_mode == "Step":
+        return series["step"].to_numpy()
+    if x_mode == "Hours since start":
+        start = run["start_time"] or 0.0
+        return (series["wall_time"].to_numpy() - start) / 3600
+    return to_local(series["wall_time"], tz)
+
+
+def add_curve(
+    fig: go.Figure,
+    x,
+    series: pl.DataFrame,
+    smoothing: float,
+    color: str,
+    name: str,
+    hover: str,
+    dash: str = "solid",
+) -> None:
+    """Add one smoothed curve, over its faint raw data, to a figure.
+
+    Args:
+        fig: Figure to draw on.
+        x: X values, from :func:`curve_x`.
+        series: ``step`` and ``value`` of the metric.
+        smoothing: EMA weight; 0 draws the raw data only.
+        color: Line color.
+        name: Legend entry.
+        hover: First lines of the tooltip.
+        dash: Plotly line style of the smoothed line.
+    """
+    steps = series["step"].to_numpy()
+    values = series["value"].to_numpy()
+    if smoothing > 0:
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=values,
+                mode="lines",
+                line={"color": color, "width": 1, "dash": dash},
+                opacity=0.25,
+                legendgroup=name,
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=an.ema_smooth(values, smoothing),
+            mode="lines" if len(values) > 2 else "lines+markers",
+            name=name,
+            legendgroup=name,
+            line={"color": color, "width": 2, "dash": dash},
+            customdata=np.stack([steps, values], axis=-1),
+            hovertemplate=f"{hover}"
+            "<br>step %{customdata[0]:,.0f}"
+            "<br>value %{customdata[1]:.4g}<extra></extra>",
+        )
+    )
+
+
+def style_curves(
+    fig: go.Figure, title: str, x_mode: str, log_y: bool, height: int = 340
+) -> None:
+    """Apply the shared layout of the Curves charts.
+
+    Args:
+        fig: Figure to style.
+        title: Chart title.
+        x_mode: Value of the X axis control.
+        log_y: Whether the y axis is logarithmic.
+        height: Chart height in pixels.
+    """
+    fig.update_layout(
+        title={"text": title, "font": {"size": 14}},
+        height=height,
+        margin={"l": 10, "r": 10, "t": 40, "b": 10},
+        hovermode="x unified" if x_mode != "Wall time" else "closest",
+        legend={"orientation": "h", "y": -0.2},
+        xaxis_title=None if x_mode == "Wall time" else x_mode.lower(),
+    )
+    if log_y:
+        fig.update_yaxes(type="log")
 
 
 def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
