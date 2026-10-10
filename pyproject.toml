@@ -1,6 +1,6 @@
 [project]
 name = "tensorboard-book"
-version = "0.8.0"
+version = "0.9.0"
 description = "Bookkeeping for folders of TensorBoard runs: index, tag, group, compare and browse artifacts."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,7 +25,7 @@ dependencies = [
     "plotly>=6.0",
     "polars>=1.20",
     "pyyaml>=6.0",
-    "streamlit>=1.50",
+    "streamlit>=1.51",
     "tensorboard>=2.12",
 ]
 

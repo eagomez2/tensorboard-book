@@ -26,6 +26,7 @@ import inspect
 import io
 import json
 import os
+import re
 import shlex
 import threading
 import time
@@ -74,13 +75,13 @@ VIEWS = {
     "Timeline": ":material/view_timeline:",
     "Collections": ":material/folder_special:",
     "Fields and settings": ":material/tune:",
+    "Help": ":material/menu_book:",
 }
-# The sidebar menu in sections, as in modelboard. Help sits at the end of
-# the last one.
+# The sidebar menu in sections, as in modelboard, with Help last.
 MENU = {
     "Explore": ["Experiments", "Run details", "Compare", "Curves", "Timeline"],
     "Organize": ["Collections"],
-    "Project": ["Fields and settings"],
+    "Project": ["Fields and settings", "Help"],
 }
 # One line under each view's title saying what the view is for.
 PURPOSE = {
@@ -104,6 +105,10 @@ PURPOSE = {
         "The values you add to runs and how metrics are shown. Add, rename, "
         "regroup or hide fields; choose which numbers rank and in which "
         "direction."
+    ),
+    "Help": (
+        "How tensorboard-book works, from an overview to the guide of each "
+        "page. Every page also has its own guide under How this page works."
     ),
 }
 # Fonts ship inside the package and are served by Streamlit's static file
@@ -1317,6 +1322,55 @@ def headers(columns, config: dict | None = None) -> dict:
     return config
 
 
+def file_stem(name: str) -> str:
+    """Turn a chart or table name into a safe file name, without suffix.
+
+    Args:
+        name: Any text, such as a metric tag or a collection name.
+
+    Returns:
+        Lowercase letters, digits, dots and dashes only.
+    """
+    stem = re.sub(r"[^a-z0-9.]+", "-", name.lower()).strip("-.")
+    return stem or "figure"
+
+
+def chart(fig, key: str, name: str, where=None, **kwargs):
+    """Draw a plotly chart with a download for a modelboard report.
+
+    The download is the figure as plotly JSON, the format modelboard's
+    reports take under "Add a figure from a file". There it stays
+    interactive and takes modelboard's look.
+
+    Args:
+        fig: The plotly figure.
+        key: Widget key of the chart.
+        name: What the chart shows; becomes the file name.
+        where: Container to draw into; the page by default.
+        **kwargs: Passed to ``st.plotly_chart`` (e.g. ``on_select``).
+
+    Returns:
+        What ``st.plotly_chart`` returns (the selection, if any).
+    """
+    where = where or st
+    event = where.plotly_chart(fig, key=key, **kwargs)
+    where.container(
+        horizontal=True, horizontal_alignment="right"
+    ).download_button(
+        "For a modelboard report",
+        data=lambda: fig.to_json(),
+        file_name=f"{file_stem(name)}.json",
+        mime="application/json",
+        icon=":material/add_chart:",
+        type="tertiary",
+        key=f"report_{key}",
+        help="Downloads this chart as a plotly JSON file. In a modelboard "
+        "report, choose Add a figure from a file and pick it: the chart "
+        "stays interactive.",
+    )
+    return event
+
+
 def show_table(data, **kwargs):
     """Draw ``st.dataframe`` with capitalized headers for built-in columns.
 
@@ -1426,26 +1480,15 @@ def read_text(path: Path, limit: int = MAX_PREVIEW_BYTES) -> str | None:
 # ------------------------------------------------------------------------
 
 
-@st.dialog("How tensorboard-book works", width="large")
-def help_dialog(topic: str) -> None:
-    """Show the in-app documentation, opened on one topic.
-
-    Args:
-        topic: A key of ``HELP``; usually the current view.
-    """
+def view_help() -> None:
+    """Show the guide of every page in one place, one topic at a time."""
     topics = list(HELP)
-    default = topic if topic in HELP else topics[0]
-    widget_state("help_topic", topics, default)
+    widget_state("help_topic", topics, topics[0])
     choice = st.pills(
         "Topic", topics, key="help_topic", label_visibility="collapsed"
     )
-    st.markdown(HELP[choice or topic])
-
-
-def open_help(topic: str) -> None:
-    """Button callback: remember the topic, then open the help dialog."""
-    st.session_state.help_topic = topic
-    st.session_state.help_open = True
+    with st.container(border=True):
+        st.markdown(HELP[choice or topics[0]])
 
 
 def page_header(view: str) -> None:
@@ -1460,26 +1503,22 @@ def page_header(view: str) -> None:
         vertical_alignment="bottom",
     )
     row.title(view)
-    row.button(
-        "How this page works",
-        icon=":material/help:",
-        type="tertiary",
-        key=f"help_{view}",
-        on_click=open_help,
-        args=(view,),
-    )
+    if view in HELP:
+        with row.popover(
+            "How this page works", icon=":material/help:", type="tertiary"
+        ):
+            st.markdown(HELP[view])
     st.caption(PURPOSE[view])
 
 
 def toolbar():
-    """Return the bordered action bar used at the bottom of every view.
+    """Return the button row under a table, the same as modelboard's.
 
     Returns:
-        A horizontal container; add buttons with ``type="tertiary"``.
+        A horizontal container for plain (secondary) buttons; push a
+        download to the right with ``bar.space("stretch")``.
     """
-    return st.container(
-        border=True, horizontal=True, gap="small", vertical_alignment="center"
-    )
+    return st.container(horizontal=True, vertical_alignment="center")
 
 
 def section_label(text: str, first: bool = True) -> None:
@@ -1613,16 +1652,6 @@ def sidebar(
                         on_click=go_to,
                         args=(name,),
                     )
-            # Looks like a menu item, but opens the help dialog.
-            st.button(
-                "Help",
-                icon=":material/menu_book:",
-                key="nav_help",
-                type="tertiary",
-                width="stretch",
-                on_click=open_help,
-                args=(view,),
-            )
 
         if view in FILTER_VIEWS:
             section_label("Filters")
@@ -1964,35 +1993,24 @@ def view_experiments(
     selected = [ids[r] for r in event.selection.rows if r < len(ids)]
     st.session_state.selected = selected
 
-    note = " (value at the step it was logged, not smoothed)"
-    st.caption(
-        f"{table.height} runs · best value per metric highlighted"
-        + (note if mode == "Best" else "")
-    )
-    st.caption(short_path(ROOT), unsafe_allow_html=True)
-    # The toolbar: what's selected, then actions on it, then the download.
+    # The toolbar, as in modelboard: what's selected, the actions on it
+    # (disabled until they apply), and the download on the right.
     bar = toolbar()
-    if selected:
-        bar.badge(f"{len(selected)} selected", color="blue")
-        bar.markdown(":gray[|]")
-        selection_actions(
-            bar,
-            selected,
-            by_id,
-            data["groups"],
-            group,
-            editor,
-            defined,
-            settings,
-        )
-    else:
-        bar.caption(
-            "Select rows to plot, compare, collect, tag, star or archive them."
-        )
-    bar.markdown(":gray[|]")
+    bar.markdown(f"**{len(selected)} selected**", width="content")
+    selection_actions(
+        bar,
+        selected,
+        by_id,
+        data["groups"],
+        group,
+        editor,
+        defined,
+        settings,
+    )
     list_cols = [
         c for c, dtype in table.schema.items() if isinstance(dtype, pl.List)
     ]
+    bar.space("stretch")
     bar.download_button(
         "Export CSV",
         data=lambda: table.with_columns(
@@ -2002,8 +2020,14 @@ def view_experiments(
         file_name="experiments.csv",
         mime="text/csv",
         icon=":material/download:",
-        type="tertiary",
     )
+    note = " (value at the step it was logged, not smoothed)"
+    st.caption(
+        f"{table.height} runs · best value per metric highlighted"
+        + (note if mode == "Best" else "")
+        + ". Click rows to select them."
+    )
+    st.caption(short_path(ROOT), unsafe_allow_html=True)
     tensorboard_panel()
 
 
@@ -2029,39 +2053,39 @@ def selection_actions(
         defined: All fields.
         settings: App settings (for launching TensorBoard).
     """
+    none = not selected
     bar.button(
         "Plot curves",
         icon=":material/show_chart:",
-        type="tertiary",
+        disabled=none,
         on_click=go_to,
         args=("Curves",),
         kwargs={"curve_runs": selected[:8]},
     )
-    if len(selected) > 1:
-        bar.button(
-            "Compare",
-            icon=":material/compare_arrows:",
-            type="tertiary",
-            on_click=go_to,
-            args=("Compare",),
-            kwargs={"compare_runs": selected, "cmp_source": "Selected runs"},
-        )
-    if len(selected) == 1:
-        bar.button(
-            "Details",
-            icon=":material/description:",
-            type="tertiary",
-            on_click=go_to,
-            args=("Run details",),
-            kwargs={"run_id": selected[0]},
-        )
-    tensorboard_button(bar, [by_id[i] for i in selected], settings, "exp")
+    bar.button(
+        "Compare",
+        icon=":material/compare_arrows:",
+        disabled=len(selected) < 2,
+        on_click=go_to,
+        args=("Compare",),
+        kwargs={"compare_runs": selected, "cmp_source": "Selected runs"},
+    )
+    bar.button(
+        "Open",
+        icon=":material/open_in_new:",
+        disabled=len(selected) != 1,
+        on_click=go_to,
+        args=("Run details",),
+        kwargs={"run_id": selected[0] if selected else None},
+        help="Opens the run in Run details.",
+    )
+    runs = [by_id[i] for i in selected]
+    tensorboard_button(bar, runs, settings, "exp", "TensorBoard", none)
     if not editor:
         return
-    runs = [by_id[i] for i in selected]
     conn = db.connect(DB_PATH)
     with bar.popover(
-        "Collection", icon=":material/folder_special:", type="tertiary"
+        "Add to collection", icon=":material/playlist_add:", disabled=none
     ):
         choice = st.selectbox(
             "Existing collection",
@@ -2069,7 +2093,7 @@ def selection_actions(
             key="bulk_group",
         )
         new_name = st.text_input("…or new collection", key="bulk_new_group")
-        if st.button("Add to collection", type="primary"):
+        if st.button("Add", type="primary"):
             name = new_name.strip() or (choice if choice != "—" else "")
             if name:
                 gid = db.create_group(conn, name)
@@ -2078,7 +2102,7 @@ def selection_actions(
         if group is not None and st.button(f"Remove from {group['name']}"):
             db.remove_from_group(conn, group["id"], selected)
             st.rerun()
-    with bar.popover("Tag", icon=":material/sell:", type="tertiary"):
+    with bar.popover("Tag", icon=":material/sell:", disabled=none):
         new_tags = st.multiselect(
             "Add tags",
             list(tags_field().options),
@@ -2096,7 +2120,7 @@ def selection_actions(
                 db.remove_tags(conn, selected, drop)
                 st.rerun()
     if defined:
-        with bar.popover("Field", icon=":material/label:", type="tertiary"):
+        with bar.popover("Field", icon=":material/label:", disabled=none):
             by_name = {f.name: f for f in defined}
             name = st.selectbox(
                 "Field",
@@ -2120,19 +2144,21 @@ def selection_actions(
             if right.button("Clear", key="bulk_prop_clear"):
                 db.set_field(conn, selected, name, None)
                 st.rerun()
-    all_starred = all(r["starred"] for r in runs)
+    all_starred = bool(runs) and all(r["starred"] for r in runs)
     if bar.button(
         "Unstar" if all_starred else "Star",
         icon=":material/star:",
-        type="tertiary",
+        disabled=none,
+        help="Stars every selected run, or unstars them when all are starred.",
     ):
         db.set_run_flag(conn, selected, "starred", 0 if all_starred else 1)
         st.rerun()
-    all_archived = all(r["archived"] for r in runs)
+    all_archived = bool(runs) and all(r["archived"] for r in runs)
     if bar.button(
         "Unarchive" if all_archived else "Archive",
         icon=":material/archive:",
-        type="tertiary",
+        disabled=none,
+        help="Archived runs are hidden unless Show archived is on.",
     ):
         db.set_run_flag(conn, selected, "archived", 0 if all_archived else 1)
         st.rerun()
@@ -2544,7 +2570,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         yaxis={"autorange": "reversed", "title": None},
         xaxis={"title": None},
     )
-    st.plotly_chart(fig, key="compare_chart")
+    chart(fig, "compare_chart", f"compare {source}")
 
     if not aggregate:
         compare_hparams(data["hparams"], df, best_ids)
@@ -2564,10 +2590,11 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     tensorboard_button(
         bar, [by_id[i] for i in df["id"]], data["settings"], "cmp"
     )
-    bar.markdown(":gray[|]")
-    bar.markdown(":gray[Export]")
+    with bar.popover("LaTeX source", icon=":material/code:"):
+        st.code(latex, language="latex")
+    bar.space("stretch")
     for label, content, ext in [
-        ("CSV", export.write_csv(), "csv"),
+        ("Export CSV", export.write_csv(), "csv"),
         ("Markdown", an.to_markdown(export), "md"),
         ("LaTeX", latex, "tex"),
     ]:
@@ -2576,11 +2603,8 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             content,
             file_name=f"{source}.{ext}",
             icon=":material/download:",
-            type="tertiary",
             key=f"export_{ext}",
         )
-    with bar.popover("LaTeX source", icon=":material/code:", type="tertiary"):
-        st.code(latex, language="latex")
     tensorboard_panel()
 
 
@@ -2810,7 +2834,7 @@ def straight_lines(
         )
     )
     fig.update_layout(height=430, margin={"l": 70, "r": 40, "t": 60, "b": 30})
-    st.plotly_chart(fig, key="px_parcoords")
+    chart(fig, "px_parcoords", "parameters")
 
 
 def scatter_grid(
@@ -2891,7 +2915,7 @@ def scatter_grid(
         height=260 * rows + 40,
         margin={"l": 10, "r": 10, "t": 40, "b": 10},
     )
-    st.plotly_chart(grid, key="px_grid")
+    chart(grid, "px_grid", f"{target} vs settings")
     st.caption(
         f"{arrow(target, directions)} against each setting. The ringed dot "
         f"is the best run, {names[best]}. Log-scale settings show powers of "
@@ -2927,7 +2951,12 @@ def open_tensorboard(runs: list[dict], settings: dict) -> None:
 
 
 def tensorboard_button(
-    where, runs: list[dict], settings: dict, key: str, label: str = ""
+    where,
+    runs: list[dict],
+    settings: dict,
+    key: str,
+    label: str = "",
+    disabled: bool = False,
 ) -> None:
     """Draw the "Open in TensorBoard" button.
 
@@ -2937,11 +2966,12 @@ def tensorboard_button(
         settings: App settings.
         key: Unique suffix for the widget key.
         label: Button text; "Open in TensorBoard" by default.
+        disabled: Show the button greyed out (nothing to open yet).
     """
     where.button(
         label or "Open in TensorBoard",
         icon=":material/monitoring:",
-        type="tertiary",
+        disabled=disabled,
         key=f"tb_open_{key}",
         on_click=open_tensorboard,
         args=(runs, settings),
@@ -3081,7 +3111,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
             )
         style_curves(fig, arrow(tag, directions), x_mode, log_y)
         with columns[k % 2]:
-            st.plotly_chart(fig, key=f"curve_{tag}")
+            chart(fig, f"curve_{tag}", tag)
     overlay_section(conn, data, chosen_runs, options, smoothing, x_mode, log_y)
     conn.close()
 
@@ -3165,7 +3195,7 @@ def overlay_section(
             )
     title = " vs ".join(arrow(t, directions) for t in tags)
     style_curves(fig, title, x_mode, log_y, height=460)
-    st.plotly_chart(fig, key="curve_overlay")
+    chart(fig, "curve_overlay", " vs ".join(tags))
 
 
 def curve_x(series: pl.DataFrame, run: dict, x_mode: str, tz):
@@ -3377,8 +3407,8 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         },
         bargap=0.3,
     )
-    event = st.plotly_chart(
-        fig, key="timeline", on_select="rerun", selection_mode="points"
+    event = chart(
+        fig, "timeline", "timeline", on_select="rerun", selection_mode="points"
     )
     points = event.selection.get("points", []) if event else []
     if points:
@@ -3414,7 +3444,7 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         margin={"l": 10, "r": 10, "t": 40, "b": 10},
         yaxis={"rangemode": "tozero", "dtick": 1},
     )
-    left.plotly_chart(fig2, key="concurrency")
+    chart(fig2, "concurrency", "runs at once", left)
 
     # Compute hours use the activity segments, so pauses don't count.
     segments = [
@@ -3424,7 +3454,8 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         if seg_end >= start_limit
     ]
     hours = an.daily_hours(segments, tz)
-    right.plotly_chart(compute_calendar(hours, now, days, tz), key="calendar")
+    calendar = compute_calendar(hours, now, days, tz)
+    chart(calendar, "calendar", "compute per day", right)
     total = sum(hours.values())
     busiest = max(hours, key=hours.get) if hours else None
     c1, c2, c3, c4 = cards.columns(4)
@@ -4010,13 +4041,13 @@ def artifacts_tab(
     rows = [r for r in event.selection.rows if r < files.height]
     bar = toolbar()
     if not rows:
+        bar.markdown("**0 selected**", width="content")
         bar.caption(
-            "Select a file to preview and download it, or several for a zip."
+            "Click a file to preview and download it, or several for a zip."
         )
         return
     picked = files[rows]
-    bar.badge(f"{picked.height} selected", color="blue")
-    bar.markdown(":gray[|]")
+    bar.markdown(f"**{picked.height} selected**", width="content")
     folder = Path(run["path"]).name
 
     if picked.height > 1:
@@ -4046,7 +4077,6 @@ def artifacts_tab(
             file_name=f"{folder}_artifacts.zip",
             mime="application/zip",
             icon=":material/download:",
-            type="tertiary",
         )
         return
 
@@ -4064,7 +4094,6 @@ def artifacts_tab(
         data=lambda: path.read_bytes(),
         file_name=Path(rel).name,
         icon=":material/download:",
-        type="tertiary",
     )
     preview_file(path, rel, size, run, by_id)
 
@@ -4389,7 +4418,7 @@ def apply_field_changes(
             if same:
                 continue
             # Options that still have values are kept: they are renamed,
-            # merged or deleted with Options, which changes the runs too.
+            # merged or deleted with Rename values, which changes the runs.
             used = db.option_counts(conn, key)
             kept = [o for o, n in used.items() if n and o not in fld.options]
             fld = replace(fld, options=(*fld.options, *kept))
@@ -4464,7 +4493,13 @@ def render_fields(conn, data: dict, editor: bool) -> None:
                         f"{len(result['kept'])} field(s)"
                     )
                     st.rerun()
-        with bar.popover("Options", icon=":material/format_list_bulleted:"):
+        with bar.popover(
+            "Rename values",
+            icon=":material/find_replace:",
+            help="Fixes a value on every run at once: rename a typo, merge "
+            "two spellings into one, reorder or delete the values of a "
+            "choice or tags field, Tags included.",
+        ):
             options_editor(conn, data)
 
     original = fields_frame(defined)
@@ -4474,8 +4509,8 @@ def render_fields(conn, data: dict, editor: bool) -> None:
     st.caption(
         "Add a row at the bottom to create a field. Choice and tags fields "
         "list their options, separated by commas; values typed in forms "
-        "are added to them. Rename, merge or delete options with "
-        "**Options**, which changes the runs too."
+        "are added to them. To change a value on every run that has it, "
+        "such as a typo, use **Rename values**."
     )
     edited = st.data_editor(
         original,
@@ -4621,7 +4656,7 @@ def options_editor(conn, data: dict) -> None:
         if isinstance(edited, pl.DataFrame)
         else edited.to_dict("records")
     )
-    if st.button("Save options", type="primary", key="options_save"):
+    if st.button("Save values", type="primary", key="options_save"):
         rows.sort(key=lambda r: _int(r["Order"]) or 0)
         renames = {
             r["Option"]: _text(r["Rename to"])
@@ -4988,7 +5023,6 @@ def manage_backup(conn, data: dict, editor: bool) -> None:
         file_name="annotations.json",
         mime="application/json",
         icon=":material/download:",
-        type="tertiary",
     )
     if not editor:
         return
@@ -5102,9 +5136,9 @@ def main() -> None:
     if view != "Compare" and len(st.query_params):
         st.query_params.clear()
     page_header(view)
-    if st.session_state.pop("help_open", False):
-        help_dialog(st.session_state.get("help_topic", view))
-    if view == "Experiments":
+    if view == "Help":
+        view_help()
+    elif view == "Experiments":
         view_experiments(data, visible, editor, now)
     elif view == "Compare":
         view_compare(data, visible, editor)

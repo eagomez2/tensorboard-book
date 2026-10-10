@@ -1,4 +1,4 @@
-"""In-app documentation shown in the help dialog, one Markdown text per topic.
+"""In-app documentation shown on the Help page, one Markdown text per topic.
 
 The keys of ``HELP`` are the topics listed in the dialog. View names match the
 sidebar views so each view opens its own topic.
@@ -38,12 +38,17 @@ move with it but don't show up among the runs or their files.
 2. summary cards with the key numbers.
 3. the controls for what to show (**Show** always adds extra columns).
 4. the content.
-5. a toolbar with actions and downloads: what's selected on the left,
-   actions in the middle, downloads last.
+5. under a table, a row of buttons as in modelboard: how many rows are
+   selected, the actions on them (greyed out until they apply), and the
+   downloads on the right.
+
+Every chart has a **For a modelboard report** button: it downloads the
+chart as a plotly JSON file. In modelboard, open a report, choose **Add a
+figure from a file** and pick it; the chart stays interactive there.
 
 The sidebar filters (collection, tags, status, search) appear in the views
 they change: Experiments and Timeline. **Help** at the end of the menu
-opens this guide from anywhere.
+opens this guide, every topic on one page.
 
 Nothing in your runs folder is ever changed or deleted.
 """,
@@ -242,9 +247,12 @@ Everything about how this runs folder is described, in four tabs.
   scale, decimals, direction or options, or untick **Visible** to keep it
   out of **Show** by default. Changing the type converts the values and
   stops with a message if one doesn't fit. Tick **Delete** to remove a
-  field and its values when you save. **Options** renames, merges or
-  deletes the options of a choice or tags field (the run tags are the
-  built-in `Tags` field), changing the runs that use them. **Export
+  field and its values when you save. **Rename values** changes a value
+  on every run that has it: fix a typo, merge two spellings such as
+  `resnet` and `ResNet`, reorder (which sets the colors) or delete the
+  values of a choice or tags field, including the built-in `Tags`. The
+  table only edits the list a field offers, and keeps the values runs
+  still use. **Export
   fields** and **Import fields** copy the definitions to another runs
   folder; values are not included.
 - **Metrics**: for each logged metric, its group (the tag up to the last

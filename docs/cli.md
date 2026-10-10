@@ -34,7 +34,7 @@ example:
 
 ```console
 $ tensorboard-book --version
-tensorboard-book version 0.8.0 2026
+tensorboard-book version 0.9.0 2026
 ```
 
 <!-- cli: -->

@@ -13,12 +13,14 @@ Every view is laid out the same way, top to bottom:
 2. Summary cards with the key numbers.
 3. Controls for what to show. **Show** always adds extra columns.
 4. The content.
-5. A toolbar with actions and downloads: what's selected on the left,
-   actions in the middle, downloads last.
+5. Under a table, the same button row as modelboard: how many rows are
+   selected, the actions on them (greyed out until they apply), and the
+   downloads on the right. Charts have a **For a modelboard report**
+   download.
 
-**Help**, the last item of the menu, opens the same guide as the per-view
-button. It also covers filters, status and run time, fields, and password
-access.
+**Help**, the last item of the menu, is a page with every guide, one topic
+at a time: the per-view guides, plus filters, status and run time,
+fields, TensorBoard and password access.
 The bottom of the sidebar shows how many runs there are and how many are
 active, when they were last scanned, **Rescan** and **Auto**, and the
 version you're running. The app follows your system's light or dark
