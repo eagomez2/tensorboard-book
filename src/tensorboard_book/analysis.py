@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 import numpy as np
 import polars as pl
 
+from tensorboard_book.fields import to_number
+
 LOWER_IS_BETTER = (
     "loss",
     "error",
@@ -345,7 +347,8 @@ def _compare(x, op: str, target: str) -> bool:
     if op == "~":
         return re.search(target, str(x), re.IGNORECASE) is not None
     try:
-        t_num = float(target)
+        # Numbers may end in a prefix, as fields are typed: 20M, 4.2G.
+        t_num = to_number(target)
         numeric = isinstance(x, int | float) and not isinstance(x, bool)
     except ValueError:
         numeric = False
@@ -382,6 +385,12 @@ def apply_filter(
     """
     mask = [True] * frame.height
     for key, op, target in terms:
+        if key not in frame.columns:
+            # Field names are capitalized, as in modelboard; dataset finds
+            # Dataset when nothing else matches.
+            same = [c for c in frame.columns if c.casefold() == key.casefold()]
+            if len(same) == 1:
+                key = same[0]
         if key not in frame.columns:
             close = difflib.get_close_matches(key, frame.columns, 3)
             hint = f" Did you mean: {', '.join(close)}?" if close else ""

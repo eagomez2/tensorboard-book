@@ -39,7 +39,7 @@ PUBLISHED = {
 TOPIC_PAGES = {
     "Filters": "topics/filters.md",
     "Status and time": "topics/status-and-time.md",
-    "Properties": "topics/properties.md",
+    "Fields": "topics/fields.md",
     "TensorBoard": "topics/tensorboard.md",
     "Password and access": "deployment.md",
 }

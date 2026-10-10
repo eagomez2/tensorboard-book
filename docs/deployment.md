@@ -67,5 +67,5 @@ so use it only on a trusted network.
 ### Large files
 
 File previews read at most 300 KB. Zip downloads are limited to 1 GB, which
-can be changed in **Manage → Settings**. A single file download is read into
+can be changed in **Fields and settings → Settings**. A single file download is read into
 memory, so copy very large checkpoints with `scp` or `rsync` instead.

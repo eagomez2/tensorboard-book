@@ -2,7 +2,7 @@
 
 `tensorboard-book` is a web application for organizing and comparing the
 runs in a TensorBoard log folder. It indexes every run, reports the best
-value of each metric, and stores tags, notes and groups alongside the runs.
+value of each metric, and stores tags, notes, collections and fields alongside the runs.
 
 ![The Experiments view](images/experiments-light.webp#only-light){ .tb-shot }
 ![The Experiments view](images/experiments-dark.webp#only-dark){ .tb-shot }
@@ -10,8 +10,9 @@ value of each metric, and stores tags, notes and groups alongside the runs.
 ## Features
 
 - A table of all runs with their best metrics, hyperparameters and filters.
-- Tags, notes, stars, groups and custom properties for each run.
-- Comparison of a group at the step where a selection metric is best, with
+- Tags, notes and stars for each run, collections of runs, and typed fields
+  (numbers with units, choices, dates, links and more) that you define.
+- Comparison of a collection at the step where a selection metric is best, with
   mean ± std over seeds and CSV, Markdown or LaTeX export.
 - Overlaid training curves with TensorBoard's smoothing.
 - A timeline of when runs were active, and compute hours per day.
@@ -33,9 +34,9 @@ never modifies it.
 - [The views](views/index.md): each page of the app.
 - Topics: [filters](topics/filters.md),
   [status and run time](topics/status-and-time.md),
-  [properties](topics/properties.md),
+  [fields](topics/fields.md),
   [opening TensorBoard](topics/tensorboard.md),
-  [metric directions and settings](topics/settings.md).
+  [metrics and settings](topics/settings.md).
 - [Password and deployment](deployment.md): sharing the app safely.
 - [Command line](cli.md): all commands and options.
 

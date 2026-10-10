@@ -1,6 +1,6 @@
 [project]
 name = "tensorboard-book"
-version = "0.7.1"
+version = "0.8.0"
 description = "Bookkeeping for folders of TensorBoard runs: index, tag, group, compare and browse artifacts."
 readme = "README.md"
 requires-python = ">=3.10"

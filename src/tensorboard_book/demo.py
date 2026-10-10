@@ -401,15 +401,23 @@ def _write_annotations(dest: Path) -> None:
             "starred": False,
         },
     ]
-    # Example custom properties: the dataset (a category) for every run,
-    # and a hand-given rating (a number) for a few.
+    # Example fields: the dataset and GPU (choices) and model size (a
+    # number in millions) for every run, and a hand-given rating, a
+    # reviewed flag and a link for a few.
     dataset = {n: "imagenet-1k" for n in sweep}
     dataset.update({n: "cifar-100" for n in aug})
     dataset.update(
         {"keras_baseline": "cifar-10", "no_dropout_s1": "imagenet-1k"}
     )
     dataset["no_dropout_s2"] = "imagenet-1k"
+    gpu = {n: "A100" for n in dataset}
+    gpu.update({n: "H100" for n in ("no_dropout_s1", "no_dropout_s2")})
+    params = {n: 25.6e6 for n in dataset}
+    params.update({n: 11.2e6 for n in aug})
+    params["keras_baseline"] = 0.27e6
     rating = {"resnet_lr3e-4": 5.0, "resnet_lr1e-3": 4.0, "resnet_lr1e-2": 1.0}
+    reviewed = {"resnet_lr3e-4": True, "resnet_lr1e-2": True}
+    report = {"resnet_lr3e-4": "https://example.com/reports/lr-sweep"}
     listed = {r["path"] for r in runs}
     runs += [
         {"path": n, "tags": [], "notes": "", "starred": False}
@@ -417,24 +425,82 @@ def _write_annotations(dest: Path) -> None:
         if n not in listed
     ]
     for r in runs:
-        r["properties"] = {"dataset": dataset[r["path"]]}
-        if r["path"] in rating:
-            r["properties"]["rating"] = rating[r["path"]]
+        name = r["path"]
+        r["fields"] = {
+            "Dataset": dataset[name],
+            "GPU": gpu[name],
+            "Params": params[name],
+        }
+        if name in rating:
+            r["fields"]["Rating"] = rating[name]
+        if name in reviewed:
+            r["fields"]["Reviewed"] = reviewed[name]
+        if name in report:
+            r["fields"]["Report"] = report[name]
     data = {
         "format": "tensorboard-book-annotations",
-        "version": 1,
-        "properties": [
+        "version": 2,
+        "fields": [
             {
-                "name": "dataset",
-                "kind": "category",
+                "name": "Dataset",
+                "group": "Data",
+                "type": "choice",
                 "description": "Training dataset.",
+                "options": ["imagenet-1k", "cifar-100", "cifar-10"],
+                "position": 0,
             },
             {
-                "name": "rating",
-                "kind": "number",
+                "name": "Params",
+                "group": "Model",
+                "type": "number",
+                "description": "Trainable parameters.",
+                "scale": "M",
+                "decimals": 1,
+                "direction": "lower",
+                "position": 1,
+            },
+            {
+                "name": "GPU",
+                "group": "Model",
+                "type": "choice",
+                "description": "GPU the run trained on.",
+                "options": ["A100", "H100"],
+                "visible": False,
+                "position": 2,
+            },
+            {
+                "name": "Rating",
+                "group": "Review",
+                "type": "number",
                 "description": "How promising the run looks, 1 to 5.",
+                "decimals": 0,
+                "direction": "higher",
+                "position": 3,
+            },
+            {
+                "name": "Reviewed",
+                "group": "Review",
+                "type": "bool",
+                "description": "Someone checked the curves by hand.",
+                "visible": False,
+                "position": 4,
+            },
+            {
+                "name": "Report",
+                "group": "Review",
+                "type": "link",
+                "description": "Write-up of the run.",
+                "visible": False,
+                "position": 5,
             },
         ],
+        "tag_options": ["baseline", "unstable", "resumed"],
+        "metric_display": {
+            "val/acc": {"decimals": 3},
+            "test/acc": {"decimals": 3},
+            "val/loss": {"decimals": 3},
+            "train/loss": {"decimals": 3},
+        },
         "groups": [
             {
                 "name": "lr_sweep",

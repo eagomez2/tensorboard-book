@@ -4,8 +4,8 @@
 # package (see docs/_theme/hooks.py), so the site and the app say the same.
 site_name: TensorBoard Book
 site_description: >-
-  Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare
-  and browse artifacts.
+  Bookkeeping for a folder of TensorBoard runs: index, tag, collect,
+  compare and browse artifacts.
 site_author: Esteban Gómez
 repo_url: https://github.com/eagomez2/tensorboard-book
 repo_name: tensorboard-book
@@ -91,12 +91,13 @@ nav:
       - Curves: views/curves.md
       - Timeline: views/timeline.md
       - Run details: views/run-details.md
-      - Manage: views/manage.md
+      - Collections: views/collections.md
+      - Fields and settings: views/fields-and-settings.md
   - Topics:
       - Filters: topics/filters.md
       - Status and run time: topics/status-and-time.md
-      - Properties: topics/properties.md
+      - Fields: topics/fields.md
       - Opening TensorBoard: topics/tensorboard.md
-      - Metric directions and settings: topics/settings.md
+      - Metrics and settings: topics/settings.md
   - Password and deployment: deployment.md
   - Command line: cli.md

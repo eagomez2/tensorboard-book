@@ -1,13 +1,21 @@
-# Metric directions and settings
+# Metrics and settings
 
-## Metric directions
+Both are in **Fields and settings**, in the **Metrics** and **Settings**
+tabs.
 
-For each metric, the app needs to know whether higher or lower is better.
-Names containing `loss`, `error`, `mse`, `mae`, `wer`, `fid`
-and similar words default to lower is better, and everything else to higher is
-better. In **Manage → Metric directions** each metric is *auto* (follows
-that guess) until you pick *higher* or *lower*. **Reset all
-to auto** undoes every choice. Arrows (↑/↓) in column headers show the current choice.
+## Metrics
+
+Each logged metric has:
+
+- a **group**: the tag up to the last `/` (`val` for `val/acc`), unless you
+  change it.
+- a **direction**: whether higher or lower is better. Names containing
+  `loss`, `error`, `mse`, `mae`, `wer`, `fid` and similar words default to
+  lower is better, and everything else to higher is better. Each metric is
+  *auto* (follows that guess) until you pick *higher* or *lower*. **Reset
+  all to auto** forgets every direction you set. Arrows (↑/↓) in column
+  headers show the current choice.
+- a **unit**, a **scale** prefix and **decimals**, for display.
 
 ## Settings
 

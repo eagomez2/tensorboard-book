@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-2F6BD8" alt="Python 3.10 to 3.13"></a>
-  <a href="pyproject.toml"><img src="https://img.shields.io/badge/version-0.7.1-0F5F5A" alt="version 0.7.1"></a>
+  <a href="pyproject.toml"><img src="https://img.shields.io/badge/version-0.8.0-0F5F5A" alt="version 0.8.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0F5F5A" alt="MIT license"></a>
   <a href="https://eagomez2.github.io/tensorboard-book/"><img src="https://img.shields.io/badge/docs-online-0F5F5A" alt="documentation"></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
@@ -17,9 +17,10 @@
 
 A web application for organizing and comparing the runs in a TensorBoard
 log folder. `tensorboard-book` indexes every run, reports the best value of
-each metric, and stores tags, notes and groups alongside the runs. It can
-compare runs at their best step, overlay curves, show when runs were active,
-browse run files, and open any selection of runs in TensorBoard.
+each metric, and stores tags, notes, collections and fields alongside the
+runs. It can compare runs at their best step, overlay curves, show when runs
+were active, browse run files, and open any selection of runs in
+TensorBoard.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/experiments-dark.webp">
