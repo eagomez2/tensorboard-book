@@ -386,7 +386,7 @@ def apply_filter(
     mask = [True] * frame.height
     for key, op, target in terms:
         if key not in frame.columns:
-            # Field names are capitalized, as in modelboard; dataset finds
+            # Field names are capitalized; dataset finds
             # Dataset when nothing else matches.
             same = [c for c in frame.columns if c.casefold() == key.casefold()]
             if len(same) == 1:

@@ -38,13 +38,13 @@ move with it but don't show up among the runs or their files.
 2. summary cards with the key numbers.
 3. the controls for what to show (**Show** always adds extra columns).
 4. the content.
-5. under a table, a row of buttons as in modelboard: how many rows are
+5. under a table, a row of buttons: how many rows are
    selected, the actions on them (greyed out until they apply), and the
    downloads on the right.
 
-Every chart has a **For a modelboard report** button: it downloads the
-chart as a plotly JSON file. In modelboard, open a report, choose **Add a
-figure from a file** and pick it; the chart stays interactive there.
+Every chart has a **Download figure** button: it saves the chart as a
+plotly JSON file, which reports that take plotly figures show as an
+interactive chart.
 
 The sidebar filters (collection, tags, status, search) appear in the views
 they change: Experiments and Timeline. **Help** at the end of the menu
@@ -69,17 +69,17 @@ The main table, with one row per run.
 **Filter.** Narrow the table with conditions, e.g.
 `optimizer.lr < 1e-3 and val/acc > 0.9`. See the *Filters* topic.
 
-**Actions.** Tick rows and use the toolbar under the table:
-- **Plot curves** opens the selected runs in Curves.
+**Actions.** Tick rows and use the buttons under the table. They are
+greyed out until they apply:
+- **Open in**: **Run details** (one run), **Curves**, or **TensorBoard**,
+  which starts TensorBoard on the selected runs (see the *TensorBoard*
+  topic).
 - **Compare** (two or more runs) opens them in Compare, even if they aren't
   in a collection.
-- **Details** (one run) opens it in Run details.
-- **Open in TensorBoard** starts TensorBoard on the selected runs (see the
-  *TensorBoard* topic).
-- **Collection** adds them to a collection (or a new one) or removes them
-  from the current one.
-- **Tag** adds or removes tags.
-- **Field** sets or clears a field on all selected runs.
+- **Add to collection** adds them to a collection (or a new one) or
+  removes them from the current one.
+- **Field** sets or clears a field on all selected runs. Pick **Tags** to
+  add or remove tags.
 - **Star** and **Archive**: archived runs are hidden unless you turn on
   *Show archived* in the sidebar. Their files are untouched.
 - **Export CSV** saves the table as shown.
@@ -134,7 +134,7 @@ decide that runs share a config:
 The cards on top show how many runs and configs are compared and which one
 is best. The selection metric is saved with the collection.
 
-**Open in TensorBoard** (in the toolbar) starts TensorBoard on exactly the
+**Open in TensorBoard** (under the table) starts TensorBoard on exactly the
 compared runs. See the *TensorBoard* topic.
 
 The link in the address bar opens this exact comparison, so it can be
@@ -197,7 +197,7 @@ event, and disk size.
 **TensorBoard** next to the badges opens this run in TensorBoard.
 
 **Edit** (next to **TensorBoard**) opens the editor in place of the
-page, laid out like modelboard's: one card per field group, with Tags
+page: one card per field group, with Tags
 under *General*, then the run's collections, star and archive flag, then
 its notes. Each field has the input of its type: a number (typed in the
 field's unit, and it can end in a prefix such as `25.6M`), a choice or
@@ -229,7 +229,8 @@ A run can be in several collections, and deleting a collection keeps its
 runs.
 
 - **New collection**: a name and an optional description. You can also
-  select runs in Experiments and use **Collection** in the toolbar.
+  select runs in Experiments and use **Add to collection** under the
+  table.
 - **Edit collection**: rename it, describe it, change its runs, or delete
   it.
 - Each collection remembers its selection metric (from Compare) and its
@@ -347,8 +348,9 @@ managed the same way, and it can't be renamed or deleted. Fields are saved
 in the annotations backup with everything else.
 """,
     "TensorBoard": """
-**Open in TensorBoard** starts TensorBoard on exactly the runs you pick: the
-selected rows in Experiments, the runs being compared in Compare, or the
+**TensorBoard** starts TensorBoard on exactly the runs you pick: the
+selected rows in Experiments (under **Open in**), the runs being compared
+in Compare (**Open in TensorBoard**), or the
 run shown in Run details (the **TensorBoard** button). Use it to look at
 images, histograms and anything else `tensorboard-book` doesn't show.
 

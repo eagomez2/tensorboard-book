@@ -13,10 +13,10 @@ Every view is laid out the same way, top to bottom:
 2. Summary cards with the key numbers.
 3. Controls for what to show. **Show** always adds extra columns.
 4. The content.
-5. Under a table, the same button row as modelboard: how many rows are
-   selected, the actions on them (greyed out until they apply), and the
-   downloads on the right. Charts have a **For a modelboard report**
-   download.
+5. Under a table, a row of buttons: how many rows are selected, the
+   actions on them (greyed out until they apply), and the downloads on
+   the right. Charts have a **Download figure** button that saves them as
+   plotly JSON.
 
 **Help**, the last item of the menu, is a page with every guide, one topic
 at a time: the per-view guides, plus filters, status and run time,

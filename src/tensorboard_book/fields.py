@@ -1,4 +1,4 @@
-"""Fields: the values you add to runs by hand, as in modelboard.
+"""Fields: the values you add to runs by hand.
 
 A field is a column you define: its name, an optional group (to keep
 related fields together), a type, and for numbers a unit, a scale prefix,
@@ -385,7 +385,7 @@ def metric_group(tag: str) -> str:
 def with_options(fld: Field, values) -> Field:
     """Return the field with new values appended to its options.
 
-    Typing a value that isn't an option yet adds it, as in modelboard.
+    Typing a value that isn't an option yet adds it.
 
     Args:
         fld: A choice or tags field.

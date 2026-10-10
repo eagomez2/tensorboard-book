@@ -77,7 +77,7 @@ VIEWS = {
     "Fields and settings": ":material/tune:",
     "Help": ":material/menu_book:",
 }
-# The sidebar menu in sections, as in modelboard, with Help last.
+# The sidebar menu in sections, with Help last.
 MENU = {
     "Explore": ["Experiments", "Run details", "Compare", "Curves", "Timeline"],
     "Organize": ["Collections"],
@@ -116,7 +116,7 @@ PURPOSE = {
 # rest adds what the theme options cannot express: tighter page padding, a
 # see-through header, the side menu, summary tiles and pills. Colors are
 # theme-neutral (opacity and translucent fills), so they work in both the
-# light and the dark theme. The look follows modelboard's.
+# light and the dark theme.
 FONTS = "app/static/fonts"
 STYLE = f"""
 <style>
@@ -147,7 +147,7 @@ STYLE = f"""
 [data-testid="stHeader"] button, [data-testid="stHeader"] a,
 [data-testid="stStatusWidget"] {{ pointer-events: auto; }}
 /* With the sidebar open, the app menu (theme, settings) sits in its
-   bottom-left corner, as in modelboard. */
+   bottom-left corner. */
 @media (min-width: 768px) {{
     body:has([data-testid="stSidebar"][aria-expanded="true"])
         [data-testid="stHeader"] {{ z-index: 999992; }}
@@ -330,7 +330,7 @@ CODE_LANG = {
 CHECKPOINT_PATTERN = r"\.(pt|pth|ckpt|safetensors|bin|h5|pkl)$"
 MAX_PREVIEW_BYTES = 300_000
 
-# Chart colors, the same as modelboard's: checked for color vision
+# Chart colors: checked for color vision
 # deficiencies, normal vision and contrast between neighbors. Teal, orange,
 # violet, rose, blue, gold, brick, green; the dark set has the same hues in
 # the same order.
@@ -375,7 +375,7 @@ STATUS_COLOR = {
 # Named Streamlit colors for collection pills: drawn as soft,
 # translucent fills with normal text, in tables and elsewhere.
 PILL_COLORS = ("blue", "green", "orange", "violet", "red", "yellow", "gray")
-# Cell highlights per theme: the best value (warm amber, as in modelboard)
+# Cell highlights per theme: the best value (warm amber)
 # and values that differ between runs.
 CELL_CSS = {
     "light": {
@@ -751,8 +751,8 @@ def tags_field() -> Field:
 def pill_column(label: str, lists: list[list[str]]):
     """Column config that shows collections as pills.
 
-    Collections all take the primary color, as modelboard's aliases do, so
-    they never look like a tag.
+    Collections all take the primary color, so they never look like a
+    tag.
 
     Args:
         label: Column label.
@@ -1003,14 +1003,14 @@ def field_config(columns: dict[str, Field]) -> dict:
 
 
 def field_input(fld: Field, current, key: str, label: str | None = None):
-    """Draw the input for one field value, by type (as modelboard does).
+    """Draw the input for one field value, by type.
 
     Args:
         fld: The field.
         current: The current value, or None.
         key: Widget key.
         label: Widget label (defaults to the name with the unit values
-            are typed in, without the scale prefix, as in modelboard).
+            are typed in, without the scale prefix).
 
     Returns:
         What was entered, in a form :func:`fields.coerce` reads; None or
@@ -1067,7 +1067,7 @@ def field_input(fld: Field, current, key: str, label: str | None = None):
 
 
 def field_html(fld: Field, value) -> str:
-    """Format a field value as HTML for the Overview grid, as modelboard.
+    """Format a field value as HTML for the Overview grid.
 
     Args:
         fld: The field.
@@ -1095,7 +1095,7 @@ def field_html(fld: Field, value) -> str:
 
 
 def key_values(pairs: list[tuple[str, str]], columns: int = 3) -> None:
-    """Draw labels with values in a compact grid, as modelboard does.
+    """Draw labels with values in a compact grid.
 
     Args:
         pairs: ``(label, html)`` pairs; the value is escaped HTML. Empty
@@ -1336,11 +1336,10 @@ def file_stem(name: str) -> str:
 
 
 def report_chart(fig, key: str, name: str, where=None, **kwargs):
-    """Draw a plotly chart with a download for a modelboard report.
+    """Draw a plotly chart with a download of the figure.
 
-    The download is the figure as plotly JSON, the format modelboard's
-    reports take under "Add a figure from a file". There it stays
-    interactive and takes modelboard's look.
+    The download is the figure as plotly JSON, which report editors that
+    take plotly figures open as an interactive chart.
 
     Args:
         fig: The plotly figure.
@@ -1357,16 +1356,15 @@ def report_chart(fig, key: str, name: str, where=None, **kwargs):
     where.container(
         horizontal=True, horizontal_alignment="right"
     ).download_button(
-        "For a modelboard report",
+        "Download figure",
         data=lambda: fig.to_json(),
         file_name=f"{file_stem(name)}.json",
         mime="application/json",
         icon=":material/add_chart:",
         type="tertiary",
         key=f"report_{key}",
-        help="Downloads this chart as a plotly JSON file. In a modelboard "
-        "report, choose Add a figure from a file and pick it: the chart "
-        "stays interactive.",
+        help="Saves this chart as a plotly JSON file. A report that takes "
+        "plotly figures shows it as an interactive chart.",
     )
     return event
 
@@ -1512,7 +1510,7 @@ def page_header(view: str) -> None:
 
 
 def toolbar():
-    """Return the button row under a table, the same as modelboard's.
+    """Return the button row under a table.
 
     Returns:
         A horizontal container for plain (secondary) buttons; push a
@@ -1628,7 +1626,7 @@ def sidebar(
 ) -> None:
     """Draw the sidebar: the menu, filters where they apply, and status.
 
-    As in modelboard, the menu comes first; the scan status and controls
+    The menu comes first; the scan status and controls
     and the app version sit at the bottom.
 
     Args:
@@ -1993,7 +1991,7 @@ def view_experiments(
     selected = [ids[r] for r in event.selection.rows if r < len(ids)]
     st.session_state.selected = selected
 
-    # The toolbar, as in modelboard: what's selected, the actions on it
+    # The toolbar: what's selected, the actions on it
     # (disabled until they apply), and the download on the right.
     bar = toolbar()
     bar.markdown(f"**{len(selected)} selected**", width="content")
@@ -2054,14 +2052,32 @@ def selection_actions(
         settings: App settings (for launching TensorBoard).
     """
     none = not selected
-    bar.button(
-        "Plot curves",
-        icon=":material/show_chart:",
-        disabled=none,
-        on_click=go_to,
-        args=("Curves",),
-        kwargs={"curve_runs": selected[:8]},
-    )
+    runs = [by_id[i] for i in selected]
+    # The ways to look at the runs share one menu, so the row fits on
+    # one line.
+    with bar.popover("Open in", icon=":material/open_in_new:", disabled=none):
+        st.button(
+            "Run details",
+            icon=":material/description:",
+            disabled=len(selected) != 1,
+            on_click=go_to,
+            args=("Run details",),
+            kwargs={"run_id": selected[0] if selected else None},
+            help="Pick one run to open its page.",
+            width="stretch",
+        )
+        st.button(
+            "Curves",
+            icon=":material/show_chart:",
+            on_click=go_to,
+            args=("Curves",),
+            kwargs={"curve_runs": selected[:8]},
+            help="Plots the training curves of up to eight runs.",
+            width="stretch",
+        )
+        tensorboard_button(
+            st, runs, settings, "exp", "TensorBoard", width="stretch"
+        )
     bar.button(
         "Compare",
         icon=":material/compare_arrows:",
@@ -2070,17 +2086,6 @@ def selection_actions(
         args=("Compare",),
         kwargs={"compare_runs": selected, "cmp_source": "Selected runs"},
     )
-    bar.button(
-        "Open",
-        icon=":material/open_in_new:",
-        disabled=len(selected) != 1,
-        on_click=go_to,
-        args=("Run details",),
-        kwargs={"run_id": selected[0] if selected else None},
-        help="Opens the run in Run details.",
-    )
-    runs = [by_id[i] for i in selected]
-    tensorboard_button(bar, runs, settings, "exp", "TensorBoard", none)
     if not editor:
         return
     conn = db.connect(DB_PATH)
@@ -2102,34 +2107,20 @@ def selection_actions(
         if group is not None and st.button(f"Remove from {group['name']}"):
             db.remove_from_group(conn, group["id"], selected)
             st.rerun()
-    with bar.popover("Tag", icon=":material/sell:", disabled=none):
-        new_tags = st.multiselect(
-            "Add tags",
-            list(tags_field().options),
-            key="bulk_tags",
-            accept_new_options=True,
-            placeholder="Choose or type new tags",
+    with bar.popover("Field", icon=":material/label:", disabled=none):
+        # Tags is a field too, with adding and removing instead of setting.
+        by_name = {fields.TAGS: tags_field(), **{f.name: f for f in defined}}
+        name = st.selectbox(
+            "Field",
+            list(by_name),
+            key="bulk_prop",
+            format_func=lambda n: by_name[n].label(
+                with_group=True, arrow=False
+            ),
         )
-        if st.button("Add tags", type="primary"):
-            db.add_tags(conn, selected, new_tags)
-            st.rerun()
-        present = sorted({t for r in runs for t in r["tags"]})
-        if present:
-            drop = st.multiselect("Remove tags", present, key="bulk_untag")
-            if drop and st.button("Remove"):
-                db.remove_tags(conn, selected, drop)
-                st.rerun()
-    if defined:
-        with bar.popover("Field", icon=":material/label:", disabled=none):
-            by_name = {f.name: f for f in defined}
-            name = st.selectbox(
-                "Field",
-                list(by_name),
-                key="bulk_prop",
-                format_func=lambda n: by_name[n].label(
-                    with_group=True, arrow=False
-                ),
-            )
+        if name == fields.TAGS:
+            bulk_tags(conn, selected, runs)
+        else:
             fld = by_name[name]
             value = field_input(
                 fld, None, key=f"bulk_prop_value_{name}", label="Value"
@@ -2163,6 +2154,32 @@ def selection_actions(
         db.set_run_flag(conn, selected, "archived", 0 if all_archived else 1)
         st.rerun()
     conn.close()
+
+
+def bulk_tags(conn, selected: list[int], runs: list[dict]) -> None:
+    """Draw adding and removing tags on the selected runs.
+
+    Args:
+        conn: Open connection.
+        selected: Selected run ids.
+        runs: The selected runs as dicts.
+    """
+    new_tags = st.multiselect(
+        "Add tags",
+        list(tags_field().options),
+        key="bulk_tags",
+        accept_new_options=True,
+        placeholder="Choose or type new tags",
+    )
+    if st.button("Add tags", type="primary", disabled=not new_tags):
+        db.add_tags(conn, selected, new_tags)
+        st.rerun()
+    present = sorted({t for r in runs for t in r["tags"]})
+    if present:
+        drop = st.multiselect("Remove tags", present, key="bulk_untag")
+        if st.button("Remove tags", disabled=not drop):
+            db.remove_tags(conn, selected, drop)
+            st.rerun()
 
 
 def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
@@ -2605,18 +2622,16 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             icon=":material/download:",
             key=f"export_{ext}",
         )
-    # The chart for a modelboard report; the Markdown table above can be
-    # pasted into the same report's text.
+    # The chart as plotly JSON, next to the table exports.
     bar.download_button(
-        "Chart for modelboard",
+        "Chart",
         data=lambda: fig.to_json(),
         file_name=f"{file_stem(f'compare {source}')}.json",
         mime="application/json",
         icon=":material/add_chart:",
         key="export_report",
-        help="The chart above as plotly JSON. In a modelboard report, "
-        "choose Add a figure from a file and pick it. Paste the Markdown "
-        "export into the report text for the table.",
+        help="The chart above as a plotly JSON file. A report that takes "
+        "plotly figures shows it as an interactive chart.",
     )
     tensorboard_panel()
 
@@ -2970,6 +2985,7 @@ def tensorboard_button(
     key: str,
     label: str = "",
     disabled: bool = False,
+    width: str = "content",
 ) -> None:
     """Draw the "Open in TensorBoard" button.
 
@@ -2980,11 +2996,13 @@ def tensorboard_button(
         key: Unique suffix for the widget key.
         label: Button text; "Open in TensorBoard" by default.
         disabled: Show the button greyed out (nothing to open yet).
+        width: ``"content"`` or ``"stretch"``, as for ``st.button``.
     """
     where.button(
         label or "Open in TensorBoard",
         icon=":material/monitoring:",
         disabled=disabled,
+        width=width,
         key=f"tb_open_{key}",
         on_click=open_tensorboard,
         args=(runs, settings),
@@ -3591,16 +3609,15 @@ def view_run_details(
     run = by_id[rid]
     run_dir = ROOT / run["path"]
 
-    # Status, flags, collections and tags as one row of soft pills, spaced
-    # like modelboard's. Field values are in the Overview tab.
+    # Status, flags, collections and tags as one row of soft pills. Field
+    # values are in the Overview tab.
     status_color = {"Active": "green", "Stopped": "gray", "Missing": "red"}
     items = [(html.escape(run["status"]), status_color[run["status"]])]
     if run["starred"]:
         items.append(("★ starred", "orange"))
     if run["archived"]:
         items.append(("archived", "gray"))
-    # Collections take the primary color, as modelboard's aliases do, so
-    # they never look like a tag.
+    # Collections take the primary color, so they never look like a tag.
     items += [(html.escape(g), "primary") for g in run["groups"]]
     if run["has_nonfinite"]:
         items.append(("NaN/inf logged", "red"))
@@ -3641,8 +3658,7 @@ def view_run_details(
             kwargs={"editing_run": rid},
         )
     if editing:
-        # The editor takes the place of the page, as modelboard's Edit
-        # page does.
+        # The editor takes the place of the page.
         annotation_form(run, groups, data["fields"])
         return
     if run["notes"]:
@@ -3760,7 +3776,7 @@ def view_run_details(
 
 
 def overview_tab(run: dict, data: dict) -> None:
-    """Field values grouped in cards, as modelboard's Version overview.
+    """Field values grouped in cards, one per field group.
 
     Args:
         run: The run, as a dict.
@@ -3816,8 +3832,6 @@ def overview_tab(run: dict, data: dict) -> None:
 def render_add_field(bar) -> None:
     """Draw a small form to add a field without leaving the editor.
 
-    The same as modelboard's **Add a field** on its Edit page.
-
     Args:
         bar: Container the popover goes in.
     """
@@ -3867,7 +3881,7 @@ def annotation_form(
 ) -> None:
     """Edit a run's fields, tags, collections, flags and notes.
 
-    Laid out as modelboard's Edit page: one card per field group with
+    Laid out as one card per field group with
     three inputs per row (the built-in Tags under General), then the
     collections, then the notes, and **Save changes** at the end.
 
@@ -4290,7 +4304,7 @@ def view_collections(data: dict, editor: bool) -> None:
 def confirm_button(label, message, on_confirm, key, icon=None) -> None:
     """Draw a button that asks for confirmation in a popover.
 
-    The same as modelboard's: the popover says what will happen, and
+    The popover says what will happen, and
     **Yes, do it** does it.
 
     Args:
@@ -4314,7 +4328,7 @@ NUM_ROWS = (
     if "'add'" in str(inspect.signature(st.data_editor).parameters["num_rows"])
     else "dynamic"
 )
-# Columns of the fields editor, as in modelboard's Fields and settings.
+# Columns of the fields editor in Fields and settings.
 FIELD_TABLE = {
     "Group": pl.String,
     "Name": pl.String,
@@ -4476,7 +4490,7 @@ def render_fields(conn, data: dict, editor: bool) -> None:
                 type=["json"],
                 key="fields_upload",
                 help="A file from **Export fields**, an annotations file, "
-                "or a fields file exported from modelboard.",
+                "or a fields file in the same format from another app.",
             )
             existing = st.radio(
                 "Fields that already exist",
@@ -4817,7 +4831,7 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
 
 
 def view_fields_settings(data: dict, editor: bool) -> None:
-    """Fields, metrics, settings and the project, in tabs (as modelboard).
+    """Fields, metrics, settings and the project, in tabs.
 
     Args:
         data: Output of :func:`load_data`, plus ``by_id``.

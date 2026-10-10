@@ -43,7 +43,7 @@ SUBCOMMANDS = {
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 # The year of the first release, as in LICENSE, shown by --version.
 FIRST_YEAR = 2026
-# Warm light and dark themes with one teal accent, the same as modelboard's.
+# Warm light and dark themes with one teal accent.
 # Users switch between them in the app menu (Settings > Theme); by default
 # the app follows the system setting. Fonts ship inside the package, in
 # ``static/fonts``. Options the installed Streamlit does not know are

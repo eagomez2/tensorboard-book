@@ -1168,8 +1168,7 @@ def set_field(
 ) -> None:
     """Set (or clear, with None or "") one field on some runs.
 
-    A choice or tags value that isn't an option yet becomes one, as in
-    modelboard.
+    A choice or tags value that isn't an option yet becomes one.
 
     Args:
         conn: Open connection.
@@ -1374,7 +1373,7 @@ def forget_missing_runs(conn: sqlite3.Connection) -> int:
 
 
 def field_dict(fld: Field) -> dict:
-    """Describe a field for JSON files, in modelboard's words.
+    """Describe a field for JSON files in a portable format.
 
     Args:
         fld: The field.
@@ -1404,7 +1403,7 @@ def field_from_dict(data: dict) -> Field:
 
     Version 1 files describe properties as ``{"name", "kind",
     "description"}``, where ``kind`` is ``number`` or ``category``; a
-    category becomes a choice field. modelboard's fields files work too.
+    category becomes a choice field.
 
     Args:
         data: The dict.
@@ -1455,8 +1454,8 @@ def import_fields(
 ) -> dict:
     """Add the fields of an exported file; values are never touched.
 
-    Reads :func:`export_fields` files, annotation files (their fields) and
-    modelboard's fields files.
+    Reads :func:`export_fields` files and annotation files (their
+    fields).
 
     Args:
         conn: Open connection.
@@ -1718,7 +1717,7 @@ def import_annotations(conn: sqlite3.Connection, data: dict) -> dict:
 
 
 def now_iso() -> str:
-    """Return the current UTC time as ISO 8601 text, as modelboard does.
+    """Return the current UTC time as ISO 8601 text.
 
     Returns:
         For example ``2026-10-09T12:00:00+00:00``.

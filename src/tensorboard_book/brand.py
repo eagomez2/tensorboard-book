@@ -1,9 +1,8 @@
 """The tensorboard-book logo: a stack of matrices on a blue circle.
 
 A 3 x 3 matrix with two slices behind it stands for a tensor. The logo
-is the browser tab icon, the sidebar logo and the README logo. It is drawn
-in the style of modelboard's: a filled circle with a white drawing, in
-blue so it stands apart from modelboard's black and white.
+is the browser tab icon, the sidebar logo and the README logo: a filled
+blue circle with a white drawing.
 ``logo.svg`` is for light backgrounds and ``logo-dark.svg``, a lighter
 blue, for dark ones. ``logo.png`` is drawn from the same shapes with
 Pillow, so nothing has to be downloaded.
