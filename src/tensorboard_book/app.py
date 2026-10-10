@@ -1335,7 +1335,7 @@ def file_stem(name: str) -> str:
     return stem or "figure"
 
 
-def chart(fig, key: str, name: str, where=None, **kwargs):
+def report_chart(fig, key: str, name: str, where=None, **kwargs):
     """Draw a plotly chart with a download for a modelboard report.
 
     The download is the figure as plotly JSON, the format modelboard's
@@ -2570,7 +2570,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         yaxis={"autorange": "reversed", "title": None},
         xaxis={"title": None},
     )
-    chart(fig, "compare_chart", f"compare {source}")
+    report_chart(fig, "compare_chart", f"compare {source}")
 
     if not aggregate:
         compare_hparams(data["hparams"], df, best_ids)
@@ -2605,6 +2605,19 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             icon=":material/download:",
             key=f"export_{ext}",
         )
+    # The chart for a modelboard report; the Markdown table above can be
+    # pasted into the same report's text.
+    bar.download_button(
+        "Chart for modelboard",
+        data=lambda: fig.to_json(),
+        file_name=f"{file_stem(f'compare {source}')}.json",
+        mime="application/json",
+        icon=":material/add_chart:",
+        key="export_report",
+        help="The chart above as plotly JSON. In a modelboard report, "
+        "choose Add a figure from a file and pick it. Paste the Markdown "
+        "export into the report text for the table.",
+    )
     tensorboard_panel()
 
 
@@ -2834,7 +2847,7 @@ def straight_lines(
         )
     )
     fig.update_layout(height=430, margin={"l": 70, "r": 40, "t": 60, "b": 30})
-    chart(fig, "px_parcoords", "parameters")
+    report_chart(fig, "px_parcoords", "parameters")
 
 
 def scatter_grid(
@@ -2915,7 +2928,7 @@ def scatter_grid(
         height=260 * rows + 40,
         margin={"l": 10, "r": 10, "t": 40, "b": 10},
     )
-    chart(grid, "px_grid", f"{target} vs settings")
+    report_chart(grid, "px_grid", f"{target} vs settings")
     st.caption(
         f"{arrow(target, directions)} against each setting. The ringed dot "
         f"is the best run, {names[best]}. Log-scale settings show powers of "
@@ -3111,7 +3124,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
             )
         style_curves(fig, arrow(tag, directions), x_mode, log_y)
         with columns[k % 2]:
-            chart(fig, f"curve_{tag}", tag)
+            report_chart(fig, f"curve_{tag}", tag)
     overlay_section(conn, data, chosen_runs, options, smoothing, x_mode, log_y)
     conn.close()
 
@@ -3195,7 +3208,7 @@ def overlay_section(
             )
     title = " vs ".join(arrow(t, directions) for t in tags)
     style_curves(fig, title, x_mode, log_y, height=460)
-    chart(fig, "curve_overlay", " vs ".join(tags))
+    report_chart(fig, "curve_overlay", " vs ".join(tags))
 
 
 def curve_x(series: pl.DataFrame, run: dict, x_mode: str, tz):
@@ -3407,7 +3420,7 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         },
         bargap=0.3,
     )
-    event = chart(
+    event = report_chart(
         fig, "timeline", "timeline", on_select="rerun", selection_mode="points"
     )
     points = event.selection.get("points", []) if event else []
@@ -3444,7 +3457,7 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         margin={"l": 10, "r": 10, "t": 40, "b": 10},
         yaxis={"rangemode": "tozero", "dtick": 1},
     )
-    chart(fig2, "concurrency", "runs at once", left)
+    report_chart(fig2, "concurrency", "runs at once", left)
 
     # Compute hours use the activity segments, so pauses don't count.
     segments = [
@@ -3455,7 +3468,7 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
     ]
     hours = an.daily_hours(segments, tz)
     calendar = compute_calendar(hours, now, days, tz)
-    chart(calendar, "calendar", "compute per day", right)
+    report_chart(calendar, "calendar", "compute per day", right)
     total = sum(hours.values())
     busiest = max(hours, key=hours.get) if hours else None
     c1, c2, c3, c4 = cards.columns(4)
