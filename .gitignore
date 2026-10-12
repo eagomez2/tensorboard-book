@@ -12,3 +12,4 @@ tbook-demo/
 
 # macOS
 .DS_Store
+.tensorboard-book/
