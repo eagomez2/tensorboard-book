@@ -6,16 +6,16 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
       
       
-        <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/views/manage/">
+        <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/views/fields-and-settings/">
       
       
-        <link rel="prev" href="../run-details/">
+        <link rel="prev" href="../collections/">
       
       
         <link rel="next" href="../../topics/filters/">
@@ -29,7 +29,7 @@
     
     
       
-        <title>Manage - TensorBoard Book</title>
+        <title>Fields and settings - TensorBoard Book</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#manage" class="md-skip">
+        <a href="#fields-and-settings" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Manage
+              Fields and settings
             
           </span>
         </div>
@@ -452,6 +452,8 @@
       
         
       
+        
+      
     
     
     
@@ -650,6 +652,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../collections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -669,7 +699,7 @@
   <span class="md-ellipsis">
     
   
-    Manage
+    Fields and settings
   
 
     
@@ -818,14 +848,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../topics/properties/" class="md-nav__link">
+      <a href="../../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -881,7 +911,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -991,30 +1021,42 @@
 
 
 
-<h1 id="manage">Manage<a class="headerlink" href="#manage" title="Permanent link">&para;</a></h1>
-<p><img alt="The Manage view" class="tb-shot" src="../../images/manage-light.webp#only-light" />
-<img alt="The Manage view" class="tb-shot" src="../../images/manage-dark.webp#only-dark" /></p>
-<p>Housekeeping.</p>
+<h1 id="fields-and-settings">Fields and settings<a class="headerlink" href="#fields-and-settings" title="Permanent link">&para;</a></h1>
+<p><img alt="The Fields tab of Fields and settings" class="tb-shot" src="../../images/fields-settings-light.webp#only-light" />
+<img alt="The Fields tab of Fields and settings" class="tb-shot" src="../../images/fields-settings-dark.webp#only-dark" /></p>
+<p>Everything about how this runs folder is described, in four tabs.</p>
 <ul>
-<li><strong>Groups</strong>: create, rename, describe, change members, delete. Deleting a
-  group keeps its runs.</li>
-<li><strong>Tags</strong>: rename (renaming to an existing tag merges them) or delete.</li>
-<li><strong>Properties</strong>: define custom properties (see <a href="../../topics/properties/">Properties</a>),
-  rename them, describe them or delete them.</li>
-<li><strong>Metric directions</strong>: whether higher or lower is better for each
-  metric. Names with <em>loss</em>, <em>error</em>, <em>mse</em> and similar words
-  default to lower. <em>auto</em> follows that guess. Pick
-  <em>higher</em> or <em>lower</em> to fix a metric, and <strong>Reset all to auto</strong> to undo
-  every choice.</li>
-<li><strong>Disk usage</strong>: per run and per group.</li>
+<li><strong>Fields</strong>: the fields you add to runs (see <a href="../../topics/fields/">Fields</a>). Edit
+  the table and press <strong>Save fields</strong>: add a row to create a field, change
+  a name to rename it (its values follow), change its group, type, unit,
+  scale, decimals, direction or options, or untick <strong>Visible</strong> to keep it
+  out of <strong>Show</strong> by default. Changing the type converts the values and
+  stops with a message if one doesn't fit. Tick <strong>Delete</strong> to remove a
+  field and its values when you save. <strong>Rename values</strong> changes a value
+  on every run that has it: fix a typo, merge two spellings such as
+  <code>resnet</code> and <code>ResNet</code>, reorder (which sets the colors) or delete the
+  values of a choice or tags field, including the built-in <code>Tags</code>. The
+  table only edits the list a field offers, and keeps the values runs
+  still use. <strong>Export
+  fields</strong> and <strong>Import fields</strong> copy the definitions to another runs
+  folder; values are not included.</li>
+<li><strong>Scalars</strong>: for each logged scalar, its group (the tag up to the last
+  <code>/</code> unless you change it), whether higher or lower is better, its unit,
+  scale and decimals. Names with <em>loss</em>, <em>error</em>, <em>mse</em> and similar words
+  default to lower; <em>auto</em> follows that guess. <strong>Reset all to auto</strong>
+  forgets every direction you set.</li>
 <li><strong>Settings</strong>: the active threshold, the pause length, the seed pattern,
-  the stored points per curve, the zip size limit, and the TensorBoard
-  limit and extra arguments. Changing the pause or the points re-parses all
-  runs.</li>
-<li><strong>Backup</strong>: download or import the annotations JSON, and forget runs whose
-  folders were deleted.</li>
+  the stored points per curve, the zip size limit, the TensorBoard limit
+  and extra arguments, and the names of config files. Changing the pause
+  or the points re-parses all runs.</li>
+<li><strong>Project</strong>: where the runs folder and database are, disk usage per run
+  and per collection, and <strong>Backup</strong>: download or import the annotations
+  JSON, and forget runs whose folders were deleted.</li>
 </ul>
-<p>Read-only visitors only see Disk usage and Backup.</p>
+<p>Read-only visitors see the fields and scalars but can't change them.</p>
+<p>The <strong>Scalars</strong> and <strong>Settings</strong> tabs are described in more detail in
+<a href="../../topics/settings/">Scalars and settings</a>, and fields in
+<a href="../../topics/fields/">Fields</a>.</p>
 
 
 
@@ -1050,7 +1092,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../run-details/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Run details">
+          <a href="../collections/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Collections">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1060,7 +1102,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Run details
+                Collections
               </div>
             </div>
           </a>

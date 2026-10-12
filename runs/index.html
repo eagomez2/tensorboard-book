@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -470,6 +470,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#config-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#renamed-moved-copied-and-deleted-runs" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -485,6 +496,17 @@
     <span class="md-ellipsis">
       
         Where data is stored
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-annotations-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The annotations file
       
     </span>
   </a>
@@ -518,6 +540,8 @@
       
         
           
+        
+      
         
       
         
@@ -733,14 +757,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../views/manage/" class="md-nav__link">
+      <a href="../views/collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../views/fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -888,14 +940,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../topics/properties/" class="md-nav__link">
+      <a href="../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -951,7 +1003,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -1064,6 +1116,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#config-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#renamed-moved-copied-and-deleted-runs" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1079,6 +1142,17 @@
     <span class="md-ellipsis">
       
         Where data is stored
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-annotations-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The annotations file
       
     </span>
   </a>
@@ -1124,20 +1198,36 @@
   <code>runs/project/exp1/events…</code>, use <code>tensorboard-book runs --depth 2</code>.</li>
 <li>Both PyTorch-style scalars (<code>simple_value</code>) and TF2 tensor scalars are read.</li>
 <li>Hyperparameters come from the TensorBoard hparams plugin and from
-  <code>config</code>, <code>hparams</code>, <code>args</code>, <code>params</code>, <code>cfg</code> or <code>opts</code> files (<code>.yaml</code>,
-  <code>.yml</code> or <code>.json</code>) at the top of the run, one folder down, or in
-  <code>.hydra/</code>. Lightning's <code>hparams.yaml</code> with <code>!!python/object</code> tags is read
-  safely, and nothing is ever instantiated.</li>
+  config files. See <a href="#config-files">Config files</a>.</li>
 <li>Text summaries are shown on the run page. Images, histograms and other
   plugins are counted but not rendered: open TensorBoard for those. The run
   page shows the exact <code>tensorboard --logdir …</code> command.</li>
 </ul>
+<h2 id="config-files">Config files<a class="headerlink" href="#config-files" title="Permanent link">&para;</a></h2>
+<p>The values of a run's config files become its hyperparameters. A config
+file is a <code>.yaml</code>, <code>.yml</code>, <code>.json</code> or <code>.toml</code> file whose name matches one
+of the patterns in <strong>Fields and settings → Settings → Config file names</strong>.
+The default patterns are <code>config.*</code>, <code>hparams.*</code>, <code>args.*</code>, <code>params.*</code>,
+<code>cfg.*</code> and <code>opts.*</code>.</p>
+<ul>
+<li>A pattern without <code>/</code>, such as <code>train_*.yaml</code>, matches file names at the
+  top of the run, one folder down, or in <code>.hydra/</code>.</li>
+<li>A pattern with <code>/</code>, such as <code>conf/*.toml</code>, matches the path inside the
+  run, at any depth.</li>
+<li>Case is ignored.</li>
+</ul>
+<p>The first pattern that matches a file of the run gives its <strong>main config
+file</strong>. When a run has several config files, the main one wins for keys
+they share. Run details compares the main config files of two runs even
+when their names differ, for example <code>config.yaml</code> and <code>exp_42.yaml</code>.</p>
+<p>Lightning's <code>hparams.yaml</code> with <code>!!python/object</code> tags is read safely,
+and nothing is ever instantiated.</p>
 <h2 id="renamed-moved-copied-and-deleted-runs">Renamed, moved, copied and deleted runs<a class="headerlink" href="#renamed-moved-copied-and-deleted-runs" title="Permanent link">&para;</a></h2>
 <p>Runs are identified by a fingerprint of their first event file, not by their
-path, so renaming or moving a run folder keeps its tags, notes and groups. A
-copied folder becomes a new run. A deleted folder is marked <strong>Missing</strong> and
-keeps its annotations until you choose <strong>Manage → Backup → Forget missing
-runs</strong>. <code>tensorboard-book</code> never modifies or deletes anything in your runs
+path, so renaming or moving a run folder keeps its tags, notes, fields and
+collections. A copied folder becomes a new run. A deleted folder is marked
+<strong>Missing</strong> and keeps its annotations until you choose <strong>Fields and
+settings → Project → Backup → Forget missing runs</strong>. <code>tensorboard-book</code> never modifies or deletes anything in your runs
 folder, apart from its own two files.</p>
 <h2 id="where-data-is-stored">Where data is stored<a class="headerlink" href="#where-data-is-stored" title="Permanent link">&para;</a></h2>
 <table>
@@ -1156,8 +1246,13 @@ folder, apart from its own two files.</p>
 </tr>
 <tr>
 <td><code>ROOT/.tensorboard-book/annotations.json</code></td>
-<td>Your tags, notes, stars, groups, properties, metric directions and settings. It is rewritten after every edit.</td>
+<td>Your tags, notes, stars, collections, fields, scalar groups, directions and display, and settings. It is rewritten after every edit.</td>
 <td>No. Commit it to git or back it up.</td>
+</tr>
+<tr>
+<td><code>ROOT/.tensorboard-book/annotations-v1.json</code></td>
+<td>A copy of the annotations file as it was before the upgrade from properties to fields. Only there if you used an older version.</td>
+<td>Yes, once you've checked your fields.</td>
 </tr>
 </tbody>
 </table>
@@ -1170,8 +1265,17 @@ next start.</p>
 <code>~/.cache/tensorboard-book/&lt;folder name&gt;-&lt;hash&gt;/</code>. You can also choose the location with
 <code>--db PATH</code>, and the annotations file goes next to it. On first start with an
 empty database, annotations are restored from the JSON automatically. You can
-also export and import them from <strong>Manage → Backup</strong> or with the
-<code>export-annotations</code> and <code>import-annotations</code> commands.</p>
+also export and import them from <strong>Fields and settings → Project → Backup</strong>
+or with the <code>export-annotations</code> and <code>import-annotations</code> commands.</p>
+<h2 id="the-annotations-file">The annotations file<a class="headerlink" href="#the-annotations-file" title="Permanent link">&para;</a></h2>
+<p>The annotations file is version 2. Next to <code>runs</code>, it has <code>fields</code> (the
+field definitions), <code>tag_options</code> (the order, and so the colors, of the
+tags), <code>metric_display</code> (each scalar's group, unit, scale and decimals),
+<code>metric_directions</code>, <code>settings</code>, and the collections, which are still
+stored under <code>groups</code>. Version 1 files, with <code>properties</code> instead of
+<code>fields</code>, can still be imported: category properties become choice fields
+with their values as options, in alphabetical order. See
+<a href="../topics/fields/#coming-from-properties">Coming from properties</a>.</p>
 
 
 

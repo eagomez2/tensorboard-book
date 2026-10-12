@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -452,6 +452,8 @@
       
         
       
+        
+      
     
     
     
@@ -663,14 +665,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../manage/" class="md-nav__link">
+      <a href="../collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -818,14 +848,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../topics/properties/" class="md-nav__link">
+      <a href="../../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -881,7 +911,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -999,7 +1029,10 @@
 <li><strong>Bars</strong>: one per run, from its first to its last logged event. Hover for
   the span, the compute time and the status. Click a bar to open the run.
   The dotted line is now.</li>
-<li><strong>Color by</strong>: group, status or first tag.</li>
+<li><strong>Color by</strong>: collection, status or tag. A run with several tags takes
+  the color of the first one in the order of the tag options (Fields and
+  settings → Fields → Rename values), and the hover lists all of them.
+  A run in several collections takes the color of the oldest one.</li>
 <li><strong>Runs at once</strong>: how many runs were running at each moment. Useful to
   spot idle or overloaded machines.</li>
 <li><strong>Compute hours per day</strong>: a calendar of how many hours of runs happened

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -448,6 +448,8 @@
       
         
       
+        
+      
     
     
     
@@ -649,14 +651,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../views/manage/" class="md-nav__link">
+      <a href="../views/collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../views/fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -804,14 +834,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../topics/properties/" class="md-nav__link">
+      <a href="../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -867,7 +897,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -1268,7 +1298,7 @@ with 6.6 million scalar values (290 MB) take about 35 s with one worker and
 <p><code>-v</code> or <code>--version</code> prints the version and the years of the project, for
 example:</p>
 <div class="highlight"><pre><span></span><code><span class="gp">$ </span>tensorboard-book<span class="w"> </span>--version
-<span class="go">tensorboard-book version 0.7.1 2026</span>
+<span class="go">tensorboard-book version 0.9.0 2026</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>usage: tensorboard-book [-h] [-v]
                         {serve,scan,view,hash-password,demo,export-annotations,import-annotations}

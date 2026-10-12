@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -539,6 +539,8 @@
       
         
       
+        
+      
     
     
     
@@ -740,14 +742,42 @@
   
   
     <li class="md-nav__item">
-      <a href="views/manage/" class="md-nav__link">
+      <a href="views/collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="views/fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -895,14 +925,14 @@
   
   
     <li class="md-nav__item">
-      <a href="topics/properties/" class="md-nav__link">
+      <a href="topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -958,7 +988,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -1123,14 +1153,15 @@
 <h1 id="tensorboard-book">TensorBoard Book<a class="headerlink" href="#tensorboard-book" title="Permanent link">&para;</a></h1>
 <p><code>tensorboard-book</code> is a web application for organizing and comparing the
 runs in a TensorBoard log folder. It indexes every run, reports the best
-value of each metric, and stores tags, notes and groups alongside the runs.</p>
+value of each scalar, and stores tags, notes, collections and fields alongside the runs.</p>
 <p><img alt="The Experiments view" class="tb-shot" src="images/experiments-light.webp#only-light" />
 <img alt="The Experiments view" class="tb-shot" src="images/experiments-dark.webp#only-dark" /></p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <ul>
-<li>A table of all runs with their best metrics, hyperparameters and filters.</li>
-<li>Tags, notes, stars, groups and custom properties for each run.</li>
-<li>Comparison of a group at the step where a selection metric is best, with
+<li>A table of all runs with their best scalars, hyperparameters and filters.</li>
+<li>Tags, notes and stars for each run, collections of runs, and typed fields
+  (numbers with units, choices, dates, links and more) that you define.</li>
+<li>Comparison of a collection at the step where a selection scalar is best, with
   mean ± std over seeds and CSV, Markdown or LaTeX export.</li>
 <li>Overlaid training curves with TensorBoard's smoothing.</li>
 <li>A timeline of when runs were active, and compute hours per day.</li>
@@ -1151,9 +1182,9 @@ never modifies it.</p>
 <li><a href="views/">The views</a>: each page of the app.</li>
 <li>Topics: <a href="topics/filters/">filters</a>,
   <a href="topics/status-and-time/">status and run time</a>,
-  <a href="topics/properties/">properties</a>,
+  <a href="topics/fields/">fields</a>,
   <a href="topics/tensorboard/">opening TensorBoard</a>,
-  <a href="topics/settings/">metric directions and settings</a>.</li>
+  <a href="topics/settings/">scalars and settings</a>.</li>
 <li><a href="deployment/">Password and deployment</a>: sharing the app safely.</li>
 <li><a href="cli/">Command line</a>: all commands and options.</li>
 </ul>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -452,6 +452,8 @@
       
         
       
+        
+      
     
     
     
@@ -711,14 +713,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../manage/" class="md-nav__link">
+      <a href="../collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -866,14 +896,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../topics/properties/" class="md-nav__link">
+      <a href="../../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -929,7 +959,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -1061,21 +1091,22 @@
 <h1 id="compare">Compare<a class="headerlink" href="#compare" title="Permanent link">&para;</a></h1>
 <p><img alt="Compare, with the seeds of an ablation aggregated" class="tb-shot" src="../../images/compare-light.webp#only-light" />
 <img alt="Compare, with the seeds of an ablation aggregated" class="tb-shot" src="../../images/compare-dark.webp#only-dark" /></p>
-<p>Compares the runs of one group (an ablation study) fairly.</p>
-<p><strong>What to compare.</strong> A group, <strong>Selected runs</strong> (the runs you ticked before
-pressing <strong>Compare</strong> in Experiments), or <strong>Runs shown in Experiments</strong> (the
-runs that pass the sidebar filters). Use <strong>Show</strong> to add tags, notes,
-status, groups or steps to the table, so you can check that you're
-comparing the runs you meant to. When seeds are aggregated, a <strong>runs</strong>
-column lists the runs behind each row.</p>
-<p><strong>Selection metric.</strong> For each run, the step where this metric is best is
-chosen (the "checkpoint"). Every metric in <strong>Metrics at that step</strong> is shown
+<p>Compares the runs of one collection (an ablation study) fairly.</p>
+<p><strong>What to compare.</strong> A collection, <strong>Selected runs</strong> (the runs you ticked
+before pressing <strong>Compare</strong> in Experiments), or <strong>Runs shown in
+Experiments</strong> (the runs that pass the sidebar filters). Use <strong>Show</strong> to add
+tags, notes, status, collections, steps or fields to the table, so you can
+check that you're comparing the runs you meant to. When seeds are
+aggregated, a <strong>runs</strong> column lists the runs behind each row, number
+fields are averaged and choice fields list their values.</p>
+<p><strong>Selection scalar.</strong> For each run, the step where this scalar is best is
+chosen (the "checkpoint"). Every scalar in <strong>Scalars at that step</strong> is shown
 <em>at that same step</em>, using the logged value closest to it. That's how test
 scores should be reported: picking the best test value on its own would be
 cherry-picking.</p>
 <p><strong>Baseline.</strong> Pick a run (or, with seeds aggregated, a config) to show
 each number's difference to it in brackets, e.g. <code>0.9414  (+0.0147)</code>.
-Green means better and orange means worse, following the metric's
+Green means better and orange means worse, following the scalar's
 direction. The differences are also in the exports. With <em>None</em>, the
 default, the table shows no differences.</p>
 <p><strong>Aggregate seeds.</strong> Collapses runs that differ only by their seed into one
@@ -1088,11 +1119,11 @@ decide that runs share a config:</p>
 </ul>
 <p><strong>Below the table:</strong></p>
 <ul>
-<li>a dot plot of the selection metric (with error bars when aggregated).</li>
+<li>a dot plot of the selection scalar (with error bars when aggregated).</li>
 <li><em>What differs between these runs</em>: the hyperparameters that vary, with
   cells highlighted where they differ from the best run.</li>
-<li><em>Which settings lead to the best result</em>: pick a <strong>Target metric</strong> and
-  the <strong>Settings</strong> (hyperparameters and properties) to see, like
+<li><em>Which settings lead to the best result</em>: pick a <strong>Target scalar</strong> and
+  the <strong>Settings</strong> (hyperparameters and number fields) to see, like
   TensorBoard's HParams dashboard, a parallel coordinates plot and the
   target against each setting, with the best run ringed. The parallel
   coordinates plot has one line per run, colored by the target. Drag along
@@ -1102,17 +1133,17 @@ decide that runs share a config:</p>
 <li>exports as CSV, Markdown or LaTeX (with the best value in bold).</li>
 </ul>
 <p>The cards on top show how many runs and configs are compared and which one
-is best. The selection metric is saved with the group.</p>
-<p><strong>Open in TensorBoard</strong> (in the toolbar) starts TensorBoard on exactly the
+is best. The selection scalar is saved with the collection.</p>
+<p><strong>Open in TensorBoard</strong> (under the table) starts TensorBoard on exactly the
 compared runs. See <a href="../../topics/tensorboard/">TensorBoard</a>.</p>
 <p>The link in the address bar opens this exact comparison, so it can be
-shared or bookmarked. It keeps the group (or the runs, when they aren't a
-group), the selection metric, the metrics at that step, the <strong>Show</strong>
+shared or bookmarked. It keeps the collection (or the runs, when they
+aren't one), the selection scalar, the scalars at that step, the <strong>Show</strong>
 columns, the seed options and the baseline. Opening it asks for the
 password first if one is set.</p>
 <h2 id="which-settings-lead-to-the-best-result">Which settings lead to the best result<a class="headerlink" href="#which-settings-lead-to-the-best-result" title="Permanent link">&para;</a></h2>
-<p><img alt="Parallel coordinates and the target metric against each setting" class="tb-shot" src="../../images/hparams-light.webp#only-light" />
-<img alt="Parallel coordinates and the target metric against each setting" class="tb-shot" src="../../images/hparams-dark.webp#only-dark" /></p>
+<p><img alt="Parallel coordinates and the target scalar against each setting" class="tb-shot" src="../../images/hparams-light.webp#only-light" />
+<img alt="Parallel coordinates and the target scalar against each setting" class="tb-shot" src="../../images/hparams-dark.webp#only-dark" /></p>
 
 
 

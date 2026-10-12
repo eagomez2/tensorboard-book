@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -452,6 +452,8 @@
       
         
       
+        
+      
     
     
     
@@ -653,14 +655,42 @@
   
   
     <li class="md-nav__item">
-      <a href="manage/" class="md-nav__link">
+      <a href="collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -808,14 +838,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../topics/properties/" class="md-nav__link">
+      <a href="../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -871,7 +901,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -983,23 +1013,32 @@
 
 <h1 id="the-views">The views<a class="headerlink" href="#the-views" title="Permanent link">&para;</a></h1>
 <p>Pick a view from the menu in the sidebar. The current one is highlighted.
-Every view is laid out the same way, top to bottom:</p>
+The menu has three sections:</p>
+<ul>
+<li><strong>Explore</strong>: Experiments, Run details, Compare, Curves and Timeline.</li>
+<li><strong>Organize</strong>: Collections.</li>
+<li><strong>Project</strong>: Fields and settings, and Help.</li>
+</ul>
+<p>Every view is laid out the same way, top to bottom:</p>
 <ol>
 <li>The title, with a <strong>How this page works</strong> button on the right.</li>
 <li>Summary cards with the key numbers.</li>
 <li>Controls for what to show. <strong>Show</strong> always adds extra columns.</li>
 <li>The content.</li>
-<li>A toolbar with actions and downloads: what's selected on the left,
-   actions in the middle, downloads last.</li>
+<li>Under a table, a row of buttons: how many rows are selected, the
+   actions on them (greyed out until they apply), and the downloads on
+   the right. Charts have a <strong>Download figure</strong> button that saves them as
+   plotly JSON.</li>
 </ol>
-<p><strong>Help</strong>, the last item of the menu, opens the same guide as the per-view
-button. It also covers filters, status and run time, and password access.
+<p><strong>Help</strong>, the last item of the menu, is a page with every guide, one topic
+at a time: the per-view guides, plus filters, status and run time,
+fields, TensorBoard and password access.
 The bottom of the sidebar shows how many runs there are and how many are
 active, when they were last scanned, <strong>Rescan</strong> and <strong>Auto</strong>, and the
 version you're running. The app follows your system's light or dark
 setting. To pick one, open the ⋮ menu in the sidebar's bottom-left corner
 and choose <strong>Settings → Theme</strong>.</p>
-<p>The sidebar <strong>filters</strong> (group, tags, status, search, starred, archived)
+<p>The sidebar <strong>filters</strong> (collection, tags, status, search, starred, archived)
 only appear in the views they change, Experiments and Timeline, and keep
 their values while you visit other views. Compare can use the same runs
 through <strong>Runs shown in Experiments</strong>. Curves and Run details list every
@@ -1016,11 +1055,15 @@ run that isn't archived.</p>
 <tbody>
 <tr>
 <td><a href="experiments/">Experiments</a></td>
-<td>The main table: every run with its best metrics, filters, tags and groups.</td>
+<td>The main table: every run with its best scalars, filters, tags, collections and fields.</td>
+</tr>
+<tr>
+<td><a href="run-details/">Run details</a></td>
+<td>Everything about one run: its fields, files, scalars and timing.</td>
 </tr>
 <tr>
 <td><a href="compare/">Compare</a></td>
-<td>A fair comparison of a group, with seeds aggregated and exports for papers.</td>
+<td>A fair comparison of a collection, with seeds aggregated and exports for papers.</td>
 </tr>
 <tr>
 <td><a href="curves/">Curves</a></td>
@@ -1031,12 +1074,12 @@ run that isn't archived.</p>
 <td>When runs were active, how many ran at once, compute hours per day.</td>
 </tr>
 <tr>
-<td><a href="run-details/">Run details</a></td>
-<td>Everything about one run, including its files.</td>
+<td><a href="collections/">Collections</a></td>
+<td>Named sets of runs, such as a sweep or an ablation study.</td>
 </tr>
 <tr>
-<td><a href="manage/">Manage</a></td>
-<td>Groups, tags, properties, metric directions, settings and backups.</td>
+<td><a href="fields-and-settings/">Fields and settings</a></td>
+<td>Fields, scalar display, settings, disk usage and backups.</td>
 </tr>
 </tbody>
 </table>

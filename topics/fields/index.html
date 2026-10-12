@@ -6,13 +6,13 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
       
       
-        <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/topics/properties/">
+        <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/topics/fields/">
       
       
         <link rel="prev" href="../status-and-time/">
@@ -29,7 +29,7 @@
     
     
       
-        <title>Properties - TensorBoard Book</title>
+        <title>Fields - TensorBoard Book</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#properties" class="md-skip">
+        <a href="#fields" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Properties
+              Fields
             
           </span>
         </div>
@@ -450,6 +450,8 @@
       
         
       
+        
+      
     
     
     
@@ -651,14 +653,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../../views/manage/" class="md-nav__link">
+      <a href="../../views/collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../views/fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -817,6 +847,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -824,7 +872,7 @@
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -833,6 +881,47 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#copy-fields-to-another-runs-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Copy fields to another runs folder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coming-from-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coming from properties
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -881,7 +970,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -976,6 +1065,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#copy-fields-to-another-runs-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Copy fields to another runs folder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coming-from-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coming from properties
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -991,24 +1110,60 @@
 
 
 
-<h1 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h1>
-<p>Properties are values you add to runs by hand, for things the logs don't
-say or that you decide afterwards: a <strong>number</strong> (GPU hours, a human rating,
-a cost) or a <strong>category</strong> (dataset, hardware, who ran it, a verdict).</p>
+<h1 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h1>
+<p>Fields are values you add to runs by hand, for things the logs don't say
+or that you decide afterwards: the dataset, the parameter count, the GPU,
+a rating, whether someone reviewed the run, a link to the write-up.</p>
+<p><strong>Each field has:</strong></p>
+<ul>
+<li>a <strong>name</strong> and an optional <strong>group</strong> (such as <em>Data</em>, <em>Model</em> or
+  <em>Review</em>). Fields of a group stay together everywhere: in the Overview
+  cards, in the Edit form and in <strong>Show</strong> (<code>Model · params</code>).</li>
+<li>a <strong>type</strong>: <em>number</em>, <em>text</em>, <em>choice</em> (one of a list), <em>tags</em> (several
+  of a list), <em>yes/no</em>, <em>date</em> or <em>link</em>.</li>
+<li>for numbers, a <strong>unit</strong>, a <strong>scale</strong> prefix (k, M, G, m, µ, Ki, Mi, …)
+  and <strong>decimals</strong> for display, and whether <strong>higher or lower is better</strong>.
+  Values are stored as entered, so <code>25.6M</code> with scale <em>M</em> shows as
+  <code>25.6 M</code> and still sorts and filters as 25,600,000. A number that ranks
+  gets ↑ or ↓ in its header and its best value highlighted, like a scalar.</li>
+<li>for choice and tags, an ordered list of <strong>options</strong>. An option's place
+  in the list gives its color, so a value keeps its color everywhere.
+  Typing a value that isn't an option yet adds it at the end.</li>
+<li>a <strong>description</strong>, shown as help next to its input.</li>
+</ul>
+<p><strong>Using them:</strong></p>
 <ol>
-<li>Define a property once in <strong>Manage → Properties</strong>: a name, the type and
-   an optional description.</li>
-<li>Give runs a value in <strong>Run details → Edit tags, notes and properties</strong>,
-   or for many runs at once in <strong>Experiments</strong>: select rows, then
-   <strong>Property</strong> in the toolbar. For a category you can pick an existing
-   value or type a new one.</li>
-<li>Show them as columns with <strong>Show</strong> in Experiments and Compare. They sit
-   next to the metrics, and categories show as colored pills. When Compare
-   aggregates seeds, numbers are averaged and categories are listed.</li>
+<li>Define fields in <strong>Fields and settings → Fields</strong>.</li>
+<li>Give runs values in <strong>Run details → Edit</strong>, or for many runs at once in
+   <strong>Experiments</strong>: select rows, then <strong>Field</strong> in the toolbar.</li>
+<li>Show them as columns with <strong>Show</strong> in Experiments and Compare, filter
+   on them (<code>Dataset == cifar-100</code>, <code>Params &lt; 20M</code>, <code>Rating &gt;= 4</code>) and
+   find them with the sidebar search.</li>
 </ol>
-<p>Properties also work in the <strong>Filter</strong> box (<code>dataset == cifar-100</code>,
-<code>rating &gt;= 4</code>) and in the sidebar search, and they are saved in the
-annotations backup with everything else.</p>
+<p>The run tags are the built-in <code>Tags</code> field: its options and colors are
+managed the same way, and it can't be renamed or deleted. Fields are saved
+in the annotations backup with everything else.</p>
+<h2 id="copy-fields-to-another-runs-folder">Copy fields to another runs folder<a class="headerlink" href="#copy-fields-to-another-runs-folder" title="Permanent link">&para;</a></h2>
+<p><strong>Fields and settings → Fields → Export fields</strong> saves the field
+definitions, with their options and the order of the tag options, to
+<code>tensorboard-book-fields.json</code> (format <code>tensorboard-book-fields</code>). Values
+are not included. <strong>Import fields</strong> reads that file, an annotations file
+(only its fields are used) or a version 1 file with properties. Fields are
+matched by name: those that already exist are kept as they are, or updated
+from the file if you choose <strong>Update from the file</strong>. Updating can change a
+field's type. Values are never touched.</p>
+<h2 id="coming-from-properties">Coming from properties<a class="headerlink" href="#coming-from-properties" title="Permanent link">&para;</a></h2>
+<p>Before fields, runs had <em>properties</em>, which were either a number or a
+category. The first time a database with properties is opened, it is
+upgraded:</p>
+<ul>
+<li>a number property becomes a number field.</li>
+<li>a category property becomes a choice field whose options are its values
+  in alphabetical order, so pill colors start out the same.</li>
+<li>before anything changes, the annotations file is copied to
+  <code>annotations-v1.json</code> next to it, so the previous state is kept.</li>
+</ul>
+<p>Annotation files with properties (version 1) can still be imported.</p>
 
 
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -452,6 +452,8 @@
       
         
       
+        
+      
     
     
     
@@ -663,14 +665,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../manage/" class="md-nav__link">
+      <a href="../collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -818,14 +848,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../topics/properties/" class="md-nav__link">
+      <a href="../../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -881,7 +911,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -996,13 +1026,18 @@
 <img alt="The Curves view" class="tb-shot" src="../../images/curves-dark.webp#only-dark" /></p>
 <p>Overlays training curves of up to eight runs.</p>
 <ul>
-<li><strong>Runs</strong> and <strong>Metrics</strong>: one chart per metric, one line per run. Each run
+<li><strong>Runs</strong> and <strong>Scalars</strong>: one chart per scalar, one line per run. Each run
   keeps its color while you add or remove others.</li>
 <li><strong>Smoothing</strong>: the same debiased exponential moving average as
   TensorBoard. The faint line is the raw data.</li>
 <li><strong>X axis</strong>: steps, hours since the run started (to compare speed), or wall
   time.</li>
 <li><strong>Log y</strong>: logarithmic y axis.</li>
+<li><strong>Overlay scalars</strong>: below the charts, draws several scalars of the chosen
+  runs on one chart, to compare scalars on the same scale (for example
+  <code>train/loss</code> and <code>val/loss</code>). It starts with scalars that share a name
+  after the last <code>/</code>. <strong>Color by</strong> run or scalar; the other one is told
+  apart by the line style.</li>
 </ul>
 <p>Long curves are thinned to at most 5000 points for plotting, always keeping
 the first, last, lowest and highest points. Values in tables are always

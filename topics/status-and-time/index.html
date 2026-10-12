@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -18,7 +18,7 @@
         <link rel="prev" href="../filters/">
       
       
-        <link rel="next" href="../properties/">
+        <link rel="next" href="../fields/">
       
       
         
@@ -450,6 +450,8 @@
       
         
       
+        
+      
     
     
     
@@ -651,14 +653,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../../views/manage/" class="md-nav__link">
+      <a href="../../views/collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../views/fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -866,14 +896,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../properties/" class="md-nav__link">
+      <a href="../fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -929,7 +959,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -1064,7 +1094,7 @@ so the status says what can be known:</p>
 <ul>
 <li><strong>Active</strong>: an event was written recently. The default is within the
   last 5 hours, so a run whose epochs take hours still counts as active.
-  Change it in Manage → Settings.</li>
+  Change it in Fields and settings → Settings.</li>
 <li><strong>Stopped</strong>: nothing written for longer than that. The run may have
   finished, crashed, or been killed.</li>
 <li><strong>Missing</strong>: the folder is gone. Its annotations are kept.</li>
@@ -1083,7 +1113,7 @@ so the status says what can be known:</p>
 event timestamps.</p>
 <ul>
 <li>"Best" is the best logged value, not a smoothed one.</li>
-<li>Other metrics in <strong>Compare</strong> use the logged step closest to the best step.
+<li>Other scalars in <strong>Compare</strong> use the logged step closest to the best step.
   If they were logged at different intervals, the step shown may differ
   slightly.</li>
 <li>Plotted curves are downsampled above the point limit (the reported numbers
@@ -1143,13 +1173,13 @@ event timestamps.</p>
         
         
           
-          <a href="../properties/" class="md-footer__link md-footer__link--next" aria-label="Next: Properties">
+          <a href="../fields/" class="md-footer__link md-footer__link--next" aria-label="Next: Fields">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Properties
+                Fields
               </div>
             </div>
             <div class="md-footer__button md-icon">

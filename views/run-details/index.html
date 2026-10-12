@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -18,7 +18,7 @@
         <link rel="prev" href="../timeline/">
       
       
-        <link rel="next" href="../manage/">
+        <link rel="next" href="../collections/">
       
       
         
@@ -452,6 +452,8 @@
       
         
       
+        
+      
     
     
     
@@ -663,14 +665,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../manage/" class="md-nav__link">
+      <a href="../collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -818,14 +848,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../topics/properties/" class="md-nav__link">
+      <a href="../../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -881,7 +911,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -995,28 +1025,39 @@
 <p><img alt="Run details, with the Artifacts tab open" class="tb-shot" src="../../images/run-details-light.webp#only-light" />
 <img alt="Run details, with the Artifacts tab open" class="tb-shot" src="../../images/run-details-dark.webp#only-dark" /></p>
 <p>Everything about one run.</p>
-<p><strong>Top.</strong> Status, groups, tags and flags, then compute time, wall span,
+<p><strong>Top.</strong> Status, collections, tags and flags, then compute time, wall span,
 throughput (steps per second of compute), last step, time since the last
 event, and disk size.</p>
 <p><strong>TensorBoard</strong> next to the badges opens this run in TensorBoard.</p>
-<p><strong>Tags, notes and properties.</strong> Press <strong>Edit tags, notes and properties</strong>
-next to the badges, change tags, groups, star, archive flag, notes and
-custom properties in the form, and press <strong>Save</strong>. Property values also
-show as purple badges.</p>
+<p><strong>Edit</strong> (next to <strong>TensorBoard</strong>) opens the editor in place of the
+page: one card per field group, with Tags
+under <em>General</em>, then the run's collections, star and archive flag, then
+its notes. Each field has the input of its type: a number (typed in the
+field's unit, and it can end in a prefix such as <code>25.6M</code>), a choice or
+tags list (type a new value to add it as an option), yes/no, a date, a
+link or text. <strong>Add a field</strong> defines a new one without leaving the
+editor. Press <strong>Save changes</strong>, or <strong>Cancel</strong>.</p>
 <p><strong>Tabs:</strong></p>
 <ul>
+<li><strong>Overview</strong>: the run's fields in cards, one per field group, with
+  units and colored options, then its collections. Empty fields are hidden
+  unless you turn on <strong>Show empty fields</strong>.</li>
 <li><strong>Artifacts</strong>: every file in the run folder except event files. Select a
   file to preview it (images, text and config files, CSV/TSV tables, audio,
   video) and download it. Select several to download a zip. For text
-  files, pick another run to see a diff of the same file, e.g.
-  <code>config.yaml</code>.</li>
-<li><strong>Metrics</strong>: every scalar with best, best step, last, min, max, number of
+  files, pick another run to see a diff of the same file. A config file
+  is compared with the config file of the other run, even when the two
+  have different names.</li>
+<li><strong>Scalars</strong>: every scalar with best, best step, last, min, max, number of
   points and NaN/inf count.</li>
-<li><strong>Hyperparameters</strong>: the flattened config and where each value came from.</li>
+<li><strong>Hyperparameters</strong>: the flattened config, where each value came from,
+  and the run's main config file. <strong>Compare with another run</strong> lists the
+  hyperparameters that differ, whatever the names and formats of the two
+  config files, and their line-by-line difference.</li>
 <li><strong>Text</strong>: text summaries (e.g. from <code>add_text</code>).</li>
 <li><strong>Timing</strong>: activity segments and the pauses between them.</li>
 </ul>
-<p>The command to open this run in TensorBoard is at the bottom of the Metrics
+<p>The command to open this run in TensorBoard is at the bottom of the Scalars
 tab.</p>
 
 
@@ -1070,13 +1111,13 @@ tab.</p>
         
         
           
-          <a href="../manage/" class="md-footer__link md-footer__link--next" aria-label="Next: Manage">
+          <a href="../collections/" class="md-footer__link md-footer__link--next" aria-label="Next: Collections">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Manage
+                Collections
               </div>
             </div>
             <div class="md-footer__button md-icon">

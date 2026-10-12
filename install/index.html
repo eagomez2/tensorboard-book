@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -422,6 +422,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With pip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-uv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With uv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-a-copy-of-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From a copy of the repository
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check the installation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -540,6 +590,8 @@
       
         
           
+        
+      
         
       
         
@@ -755,14 +807,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../views/manage/" class="md-nav__link">
+      <a href="../views/collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../views/fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -910,14 +990,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../topics/properties/" class="md-nav__link">
+      <a href="../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -973,7 +1053,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -1094,6 +1174,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With pip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-uv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With uv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-a-copy-of-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From a copy of the repository
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check the installation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1153,12 +1283,29 @@
 <li><a href="https://docs.astral.sh/uv/">uv</a> (recommended) or pip.</li>
 </ul>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
-<p>Install the <code>tensorboard-book</code> command from a copy of the repository:</p>
+<h3 id="with-pip">With pip<a class="headerlink" href="#with-pip" title="Permanent link">&para;</a></h3>
+<p>Install <code>tensorboard-book</code> from PyPI into a virtual environment:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">        </span><span class="c1"># on Windows: .venv\Scripts\activate</span>
+pip<span class="w"> </span>install<span class="w"> </span>tensorboard-book
+</code></pre></div>
+<p>The <code>tensorboard-book</code> command is available while the environment is
+active. To upgrade to a newer version, run
+<code>pip install --upgrade tensorboard-book</code>.</p>
+<p>To install the latest code from GitHub instead of the PyPI release:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/eagomez2/tensorboard-book
+</code></pre></div>
+<h3 id="with-uv">With uv<a class="headerlink" href="#with-uv" title="Permanent link">&para;</a></h3>
+<p><code>uv tool install</code> puts the command in an environment of its own, so it is
+available everywhere without activating anything:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>tensorboard-book
+</code></pre></div>
+<h3 id="from-a-copy-of-the-repository">From a copy of the repository<a class="headerlink" href="#from-a-copy-of-the-repository" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/eagomez2/tensorboard-book
 <span class="nb">cd</span><span class="w"> </span>tensorboard-book
-uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>.<span class="w">       </span><span class="c1"># or: pip install .</span>
+pip<span class="w"> </span>install<span class="w"> </span>.<span class="w">            </span><span class="c1"># or: uv tool install .</span>
 </code></pre></div>
-<p>Check the installation:</p>
+<h3 id="check-the-installation">Check the installation<a class="headerlink" href="#check-the-installation" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>tensorboard-book<span class="w"> </span>--version
 </code></pre></div>
 <p>To work on the code instead, see
@@ -1169,7 +1316,7 @@ uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </
 <div class="highlight"><pre><span></span><code>tensorboard-book<span class="w"> </span>/path/to/runs
 </code></pre></div>
 <p>The command first indexes the folder, then prints the address of the app:</p>
-<div class="highlight"><pre><span></span><code>  tensorboard-book 0.7.1
+<div class="highlight"><pre><span></span><code>  tensorboard-book 0.9.0
 
   Runs folder: /path/to/runs
   Database: /path/to/runs/.tensorboard-book/index.db

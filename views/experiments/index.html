@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -452,6 +452,8 @@
       
         
       
+        
+      
     
     
     
@@ -663,14 +665,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../manage/" class="md-nav__link">
+      <a href="../collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -818,14 +848,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../topics/properties/" class="md-nav__link">
+      <a href="../../topics/fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -881,7 +911,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -997,29 +1027,30 @@
 <p>The main table, with one row per run.</p>
 <p><strong>Columns.</strong> Pick them in the three boxes at the top:</p>
 <ul>
-<li><strong>Metrics</strong>: the value per run is the <em>best</em> one (highest or lowest,
-  depending on the metric's direction, shown by ↑ and ↓) or the <em>last</em> one,
+<li><strong>Scalars</strong>: the value per run is the <em>best</em> one (highest or lowest,
+  depending on the scalar's direction, shown by ↑ and ↓) or the <em>last</em> one,
   depending on the <strong>Value</strong> switch. The best value in each column is
-  highlighted. Your choice is saved per group.</li>
+  highlighted. Your choice is saved per collection.</li>
 <li><strong>Hyperparameters</strong>: by default, the ones that differ between the runs
   shown.</li>
 <li><strong>Show</strong>: extra columns such as status, steps, compute time, start, tags
-  (as colored pills), groups and notes.</li>
+  (as colored pills), collections, notes and your fields. Fields are listed
+  with their group, as <code>Model · params (M)</code>; see <a href="../../topics/fields/">Fields</a>.</li>
 </ul>
 <p><strong>Filter.</strong> Narrow the table with conditions, e.g.
 <code>optimizer.lr &lt; 1e-3 and val/acc &gt; 0.9</code>. See <a href="../../topics/filters/">Filters</a>.</p>
-<p><strong>Actions.</strong> Tick rows and use the toolbar under the table:</p>
+<p><strong>Actions.</strong> Tick rows and use the buttons under the table. They are
+greyed out until they apply:</p>
 <ul>
-<li><strong>Plot curves</strong> opens the selected runs in Curves.</li>
+<li><strong>Open in</strong>: <strong>Run details</strong> (one run), <strong>Curves</strong>, or <strong>TensorBoard</strong>,
+  which starts TensorBoard on the selected runs (see the <em>TensorBoard</em>
+  topic).</li>
 <li><strong>Compare</strong> (two or more runs) opens them in Compare, even if they aren't
-  in a group.</li>
-<li><strong>Details</strong> (one run) opens it in Run details.</li>
-<li><strong>Open in TensorBoard</strong> starts TensorBoard on the selected runs (see the
-  <em>TensorBoard</em> topic).</li>
-<li><strong>Group</strong> adds them to a group (or a new one) or removes them from the
-  current one.</li>
-<li><strong>Tag</strong> adds or removes tags.</li>
-<li><strong>Property</strong> sets or clears a custom property on all selected runs.</li>
+  in a collection.</li>
+<li><strong>Add to collection</strong> adds them to a collection (or a new one) or
+  removes them from the current one.</li>
+<li><strong>Field</strong> sets or clears a field on all selected runs. Pick <strong>Tags</strong> to
+  add or remove tags.</li>
 <li><strong>Star</strong> and <strong>Archive</strong>: archived runs are hidden unless you turn on
   <em>Show archived</em> in the sidebar. Their files are untouched.</li>
 <li><strong>Export CSV</strong> saves the table as shown.</li>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, group, compare and browse artifacts.">
+        <meta name="description" content="Bookkeeping for a folder of TensorBoard runs: index, tag, collect, compare and browse artifacts.">
       
       
         <meta name="author" content="Esteban Gómez">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://eagomez2.github.io/tensorboard-book/topics/tensorboard/">
       
       
-        <link rel="prev" href="../properties/">
+        <link rel="prev" href="../fields/">
       
       
         <link rel="next" href="../settings/">
@@ -450,6 +450,8 @@
       
         
       
+        
+      
     
     
     
@@ -651,14 +653,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../../views/manage/" class="md-nav__link">
+      <a href="../../views/collections/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Manage
+    Collections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../views/fields-and-settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fields and settings
   
 
     
@@ -808,14 +838,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../properties/" class="md-nav__link">
+      <a href="../fields/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Properties
+    Fields
   
 
     
@@ -881,7 +911,7 @@
   <span class="md-ellipsis">
     
   
-    Metric directions and settings
+    Scalars and settings
   
 
     
@@ -992,8 +1022,9 @@
 
 
 <h1 id="opening-tensorboard">Opening TensorBoard<a class="headerlink" href="#opening-tensorboard" title="Permanent link">&para;</a></h1>
-<p><strong>Open in TensorBoard</strong> starts TensorBoard on exactly the runs you pick: the
-selected rows in Experiments, the runs being compared in Compare, or the
+<p><strong>TensorBoard</strong> starts TensorBoard on exactly the runs you pick: the
+selected rows in Experiments (under <strong>Open in</strong>), the runs being compared
+in Compare (<strong>Open in TensorBoard</strong>), or the
 run shown in Run details (the <strong>TensorBoard</strong> button). Use it to look at
 images, histograms and anything else <code>tensorboard-book</code> doesn't show.</p>
 <ul>
@@ -1004,7 +1035,7 @@ images, histograms and anything else <code>tensorboard-book</code> doesn't show.
   same runs reuses the running TensorBoard.</li>
 <li>Running TensorBoards are listed below the toolbar with a <strong>Stop</strong> button.
   All of them stop when <code>tensorboard-book</code> exits. At most 5 run at once by
-  default (Manage → Settings, which also takes extra TensorBoard
+  default (Fields and settings → Settings, which also takes extra TensorBoard
   arguments).</li>
 <li>TensorBoard has no password, so it only listens on this machine
   (127.0.0.1). If you reach <code>tensorboard-book</code> through an SSH tunnel, forward
@@ -1047,7 +1078,7 @@ same in the foreground. Any other options are passed to TensorBoard.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../properties/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Properties">
+          <a href="../fields/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Fields">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1057,20 +1088,20 @@ same in the foreground. Any other options are passed to TensorBoard.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Properties
+                Fields
               </div>
             </div>
           </a>
         
         
           
-          <a href="../settings/" class="md-footer__link md-footer__link--next" aria-label="Next: Metric directions and settings">
+          <a href="../settings/" class="md-footer__link md-footer__link--next" aria-label="Next: Scalars and settings">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Metric directions and settings
+                Scalars and settings
               </div>
             </div>
             <div class="md-footer__button md-icon">
