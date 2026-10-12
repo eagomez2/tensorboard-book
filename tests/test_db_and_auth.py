@@ -4,6 +4,7 @@ import pytest
 
 from tensorboard_book import auth, db, scanner
 from tensorboard_book.demo import make_demo
+from tensorboard_book.fields import Field
 
 
 def test_password_hash_roundtrip():
@@ -63,38 +64,52 @@ def test_group_editing(tmp_path):
     assert db.load_groups(conn) == []
 
 
-def test_properties_roundtrip(tmp_path):
+def test_fields_roundtrip(tmp_path):
     conn = db.connect(tmp_path / "p.db")
     conn.execute("INSERT INTO runs(fingerprint, path) VALUES ('a', 'run_a')")
     conn.execute("INSERT INTO runs(fingerprint, path) VALUES ('b', 'run_b')")
-    db.create_property(conn, "gpu_hours", "number", "Measured")
-    db.create_property(conn, "dataset", "category")
-    db.set_property(conn, [1, 2], "gpu_hours", "12.5")
-    db.set_property(conn, [1], "dataset", " imagenet ")
-    assert db.load_run_properties(conn) == {
+    db.create_field(
+        conn,
+        Field("gpu_hours", group="Cost", type="number", unit="h"),
+    )
+    db.create_field(conn, Field("dataset", type="choice"))
+    db.create_field(conn, Field("issues", type="tags"))
+    db.set_field(conn, [1, 2], "gpu_hours", "12.5")
+    db.set_field(conn, [1], "dataset", " imagenet ")
+    db.set_field(conn, [2], "issues", "nan, slow")
+    assert db.load_run_fields(conn) == {
         1: {"gpu_hours": 12.5, "dataset": "imagenet"},
-        2: {"gpu_hours": 12.5},
+        2: {"gpu_hours": 12.5, "issues": ["nan", "slow"]},
     }
+    # A value typed for the first time becomes an option.
+    assert db.get_field(conn, "dataset").options == ("imagenet",)
     with pytest.raises(ValueError):
-        db.set_property(conn, [1], "gpu_hours", "lots")
+        db.set_field(conn, [1], "gpu_hours", "lots")
     with pytest.raises(ValueError):
-        db.create_property(conn, "dataset", "number")
-    db.update_property(conn, "dataset", new_name="data")
-    assert db.load_run_properties(conn)[1]["data"] == "imagenet"
-    db.set_property(conn, [2], "gpu_hours", "")  # clears
-    assert "gpu_hours" not in db.load_run_properties(conn).get(2, {})
+        db.create_field(conn, Field("dataset", type="number"))
+    db.update_field(
+        conn,
+        "dataset",
+        Field("data", group="Data", type="choice"),
+    )
+    assert db.load_run_fields(conn)[1]["data"] == "imagenet"
+    assert db.get_field(conn, "data").group == "Data"
+    db.set_field(conn, [2], "gpu_hours", "")  # clears
+    assert "gpu_hours" not in db.load_run_fields(conn).get(2, {})
 
     exported = db.export_annotations(conn)
+    assert exported["version"] == 2
     fresh = db.connect(tmp_path / "fresh.db")
     fresh.execute("INSERT INTO runs(fingerprint, path) VALUES ('a', 'x')")
     db.import_annotations(fresh, exported)
-    props = {p["name"]: p for p in db.load_properties(fresh)}
-    assert props["gpu_hours"]["kind"] == "number"
-    assert db.load_run_properties(fresh) == {
+    defined = {f.name: f for f in db.load_fields(fresh)}
+    assert defined["gpu_hours"].type == "number"
+    assert defined["gpu_hours"].unit == "h"
+    assert db.load_run_fields(fresh) == {
         1: {"gpu_hours": 12.5, "data": "imagenet"}
     }
-    db.delete_property(fresh, "data")
-    assert db.load_run_properties(fresh) == {1: {"gpu_hours": 12.5}}
+    db.delete_field(fresh, "data")
+    assert db.load_run_fields(fresh) == {1: {"gpu_hours": 12.5}}
 
 
 def test_storage_lives_in_hidden_folder_and_migrates(tmp_path):

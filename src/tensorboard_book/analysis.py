@@ -1,7 +1,7 @@
 """Pure helpers for tables, filters, aggregation, timing and export.
 
 Nothing here touches Streamlit or the database, which keeps it easy to
-test. Tables are polars DataFrames; runs are identified by an ``id``
+test. Tables are polars DataFrames; runs are identified by an `id`
 column rather than an index.
 """
 
@@ -14,6 +14,8 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import polars as pl
+
+from tensorboard_book.fields import to_number
 
 LOWER_IS_BETTER = (
     "loss",
@@ -52,10 +54,10 @@ def guess_direction(tag: str) -> str:
     """Guess whether higher or lower values of a metric are better.
 
     Args:
-        tag: Scalar tag such as ``val/loss``.
+        tag: Scalar tag such as `val/loss`.
 
     Returns:
-        ``"min"`` if the name looks like a loss or error, else ``"max"``.
+        `"min"` if the name looks like a loss or error, else `"max"`.
     """
     words = re.split(r"[^a-z0-9]+", tag.lower())
     return "min" if any(w in LOWER_IS_BETTER for w in words) else "max"
@@ -69,13 +71,17 @@ def direction_of(tag: str, directions: dict[str, str]) -> str:
         directions: User-set directions.
 
     Returns:
-        ``"max"`` or ``"min"``.
+        `"max"` or `"min"`.
     """
     return directions.get(tag) or guess_direction(tag)
 
 
 def run_status(
-    end_time, file_mtime, missing, now: float, active_minutes: float
+    end_time,
+    file_mtime,
+    missing,
+    now: float,
+    active_minutes: float,
 ) -> str:
     """Classify a run as active, stopped or missing.
 
@@ -90,7 +96,7 @@ def run_status(
         active_minutes: Silence after which a run counts as stopped.
 
     Returns:
-        ``"Missing"``, ``"Active"`` or ``"Stopped"``.
+        `"Missing"`, `"Active"` or `"Stopped"`.
     """
     if missing:
         return "Missing"
@@ -109,18 +115,19 @@ def metric_table(
     """Build a wide table with one value per run and metric.
 
     Args:
-        metrics: Long metric summaries from ``db.load_metrics``.
+        metrics: Long metric summaries from `db.load_metrics`.
         run_ids: Runs to include, in the order of the result's rows.
         tags: Metrics to include (the columns of the result).
         directions: User-set directions.
-        mode: ``"best"`` for the best value given the metric's direction,
-            ``"last"`` for the last logged value.
+        mode: `"best"` for the best value given the metric's direction,
+            `"last"` for the last logged value.
 
     Returns:
-        DataFrame with an ``id`` column and one Float64 column per tag
+        DataFrame with an `id` column and one Float64 column per tag
         (null where a run did not log the metric).
     """
     base = pl.DataFrame({"id": run_ids}, schema={"id": pl.Int64})
+
     if not tags:
         return base
     lower = [t for t in tags if direction_of(t, directions) == "min"]
@@ -134,18 +141,23 @@ def metric_table(
     long = metrics.filter(
         pl.col("run_id").is_in(run_ids) & pl.col("tag").is_in(tags)
     ).select(pl.col("run_id").alias("id"), "tag", value.alias("value"))
+
     if long.is_empty():
         wide = base
     else:
         wide = long.pivot(
-            on="tag", index="id", values="value", aggregate_function="first"
+            on="tag",
+            index="id",
+            values="value",
+            aggregate_function="first",
         )
         wide = base.join(wide, on="id", how="left", maintain_order="left")
     missing = [
         pl.lit(None, pl.Float64).alias(t) for t in tags if t not in wide
     ]
     return wide.with_columns(missing).select(
-        "id", *[pl.col(t).cast(pl.Float64) for t in tags]
+        "id",
+        *[pl.col(t).cast(pl.Float64) for t in tags],
     )
 
 
@@ -153,8 +165,8 @@ def best_step(metric: dict, direction: str) -> int | None:
     """Return the step at which a metric reached its best value.
 
     Args:
-        metric: One row of ``db.load_metrics`` as a dict.
-        direction: ``"max"`` or ``"min"``.
+        metric: One row of `db.load_metrics` as a dict.
+        direction: `"max"` or `"min"`.
 
     Returns:
         The step, or None if the metric has no finite values.
@@ -168,26 +180,27 @@ def best_position(values, direction: str) -> int | None:
 
     Args:
         values: Numbers; None and NaN are ignored.
-        direction: ``"max"`` or ``"min"``.
+        direction: `"max"` or `"min"`.
 
     Returns:
         The index of the best value, or None if every value is missing.
     """
     pairs = [(v, i) for i, v in enumerate(values) if not is_missing(v)]
+
     if not pairs:
         return None
     return (min(pairs) if direction == "min" else max(pairs))[1]
 
 
 def value_at_step(series: pl.DataFrame, step: int) -> tuple[float, float]:
-    """Look up a series at the logged step closest to ``step``.
+    """Look up a series at the logged step closest to `step`.
 
     Args:
-        series: DataFrame with ``step`` and ``value``, sorted by step.
+        series: DataFrame with `step` and `value`, sorted by step.
         step: Target step.
 
     Returns:
-        ``(value, actual_step)``, or ``(nan, nan)`` for an empty series.
+        `(value, actual_step)`, or `(nan, nan)` for an empty series.
     """
     if series.is_empty():
         return math.nan, math.nan
@@ -203,12 +216,13 @@ def ema_smooth(values: np.ndarray, weight: float) -> np.ndarray:
 
     Args:
         values: Raw values; non-finite values are passed through.
-        weight: Smoothing factor in ``[0, 1)``; 0 returns the input.
+        weight: Smoothing factor in `[0, 1)`; 0 returns the input.
 
     Returns:
         Smoothed values of the same length.
     """
     values = np.asarray(values, dtype=float)
+
     if weight <= 0 or len(values) == 0:
         return values
     out = np.empty_like(values)
@@ -223,6 +237,33 @@ def ema_smooth(values: np.ndarray, weight: float) -> np.ndarray:
     return out
 
 
+def overlay_default(tags: list[str], limit: int = 3) -> list[str]:
+    """Pick metrics worth overlaying: the first ones sharing a leaf name.
+
+    `train/loss` and `val/loss` share the leaf `loss`, so they are on
+    the same scale and make a natural pair. Learning rates are skipped.
+
+    Args:
+        tags: Available tags, most common first.
+        limit: Maximum number to return.
+
+    Returns:
+        The tags with the most common shared leaf, or an empty list when
+        no two tags share one.
+    """
+    by_leaf: dict[str, list[str]] = {}
+    for tag in tags:
+        leaf = tag.lower().rsplit("/", 1)[-1]
+
+        if "lr" not in leaf:
+            by_leaf.setdefault(leaf, []).append(tag)
+    shared = [group for group in by_leaf.values() if len(group) > 1]
+
+    if not shared:
+        return []
+    return max(shared, key=len)[:limit]
+
+
 def _hparam_series(name: str, values: list) -> pl.Series:
     """Build one hyperparameter column with a type that fits every run.
 
@@ -230,17 +271,21 @@ def _hparam_series(name: str, values: list) -> pl.Series:
     that mixes numbers and text becomes text.
     """
     present = [v for v in values if v is not None]
+
     if present and all(isinstance(v, bool) for v in present):
         return pl.Series(name, values, dtype=pl.Boolean)
     numeric = all(
         isinstance(v, int | float) and not isinstance(v, bool) for v in present
     )
+
     if present and numeric:
         if all(isinstance(v, int) for v in present):
             return pl.Series(name, values, dtype=pl.Int64)
         return pl.Series(name, values, dtype=pl.Float64)
     return pl.Series(
-        name, [None if v is None else str(v) for v in values], pl.String
+        name,
+        [None if v is None else str(v) for v in values],
+        pl.String,
     )
 
 
@@ -251,7 +296,7 @@ def hparam_frame(hparams: dict[int, dict]) -> pl.DataFrame:
         hparams: Mapping of run id to its flat hyperparameters.
 
     Returns:
-        DataFrame with an ``id`` column and one column per hyperparameter,
+        DataFrame with an `id` column and one column per hyperparameter,
         sorted by name.
     """
     ids = list(hparams)
@@ -264,7 +309,8 @@ def hparam_frame(hparams: dict[int, dict]) -> pl.DataFrame:
 
 
 def varying_columns(
-    frame: pl.DataFrame, exclude: tuple[str, ...] = ("id",)
+    frame: pl.DataFrame,
+    exclude: tuple[str, ...] = ("id",),
 ) -> list[str]:
     """List columns whose values differ between rows.
 
@@ -284,17 +330,17 @@ def varying_columns(
 
 
 def parse_filter(expr: str) -> list[tuple[str, str, str]]:
-    """Parse a filter such as ``optimizer.lr < 1e-3 and model == resnet``.
+    """Parse a filter such as `optimizer.lr < 1e-3 and model == resnet`.
 
-    Terms are joined with ``and``. Operators: ``==`` (or ``=``), ``!=``,
-    ``<``, ``<=``, ``>``, ``>=`` and ``~`` (case-insensitive regex match).
+    Terms are joined with `and`. Operators: `==` (or `=`), `!=`,
+    `<`, `<=`, `>`, `>=` and `~` (case-insensitive regex match).
     Keys with spaces or operators can be wrapped in backticks.
 
     Args:
         expr: The filter text.
 
     Returns:
-        List of ``(key, operator, value)``.
+        List of `(key, operator, value)`.
 
     Raises:
         ValueError: If a term cannot be parsed.
@@ -304,6 +350,7 @@ def parse_filter(expr: str) -> list[tuple[str, str, str]]:
         if not part.strip():
             continue
         match = FILTER_TERM.match(part)
+
         if not match:
             raise ValueError(
                 f"Can't read {part!r}. Use: key op value, e.g. lr < 1e-3"
@@ -317,13 +364,16 @@ def parse_filter(expr: str) -> list[tuple[str, str, str]]:
 def _compare(x, op: str, target: str) -> bool:
     if is_missing(x):
         return op == "!="
+
     if op == "~":
         return re.search(target, str(x), re.IGNORECASE) is not None
     try:
-        t_num = float(target)
+        # Numbers may end in a prefix, as fields are typed: 20M, 4.2G.
+        t_num = to_number(target)
         numeric = isinstance(x, int | float) and not isinstance(x, bool)
     except ValueError:
         numeric = False
+
     if numeric:
         a, b = float(x), t_num
     else:
@@ -340,7 +390,8 @@ def _compare(x, op: str, target: str) -> bool:
 
 
 def apply_filter(
-    frame: pl.DataFrame, terms: list[tuple[str, str, str]]
+    frame: pl.DataFrame,
+    terms: list[tuple[str, str, str]],
 ) -> pl.Series:
     """Evaluate parsed filter terms against a table.
 
@@ -349,7 +400,7 @@ def apply_filter(
         terms: Output of :func:`parse_filter`.
 
     Returns:
-        Boolean Series with one value per row of ``frame``.
+        Boolean Series with one value per row of `frame`.
 
     Raises:
         ValueError: If a key is not a column (the message suggests close
@@ -357,6 +408,14 @@ def apply_filter(
     """
     mask = [True] * frame.height
     for key, op, target in terms:
+        if key not in frame.columns:
+            # Field names are capitalized; dataset finds
+            # Dataset when nothing else matches.
+            same = [c for c in frame.columns if c.casefold() == key.casefold()]
+
+            if len(same) == 1:
+                key = same[0]
+
         if key not in frame.columns:
             close = difflib.get_close_matches(key, frame.columns, 3)
             hint = f" Did you mean: {', '.join(close)}?" if close else ""
@@ -375,11 +434,11 @@ def seed_key(name: str, pattern: str) -> str:
     """Remove the seed part of a run name so seeds of a config share a key.
 
     Args:
-        name: Run name, e.g. ``aug_mixup_seed2``.
+        name: Run name, e.g. `aug_mixup_seed2`.
         pattern: Regex matching the seed part.
 
     Returns:
-        The name without the seed part, e.g. ``aug_mixup``.
+        The name without the seed part, e.g. `aug_mixup`.
     """
     return re.sub(pattern, "", name).strip("_-/ ") or name
 
@@ -405,10 +464,10 @@ def concurrency(segments: list[list[float]]) -> pl.DataFrame:
     """Count how many runs were active over time.
 
     Args:
-        segments: All ``[start, end]`` activity segments.
+        segments: All `[start, end]` activity segments.
 
     Returns:
-        Step-shaped DataFrame with ``time`` (seconds) and ``running``.
+        Step-shaped DataFrame with `time` (seconds) and `running`.
     """
     events = sorted(
         [(s, 1) for s, _ in segments] + [(e, -1) for _, e in segments]
@@ -428,19 +487,23 @@ def daily_hours(segments: list[list[float]], tz) -> dict:
     """Split activity segments into compute hours per calendar day.
 
     Args:
-        segments: ``[start, end]`` pairs in seconds.
-        tz: A ``tzinfo`` for the calendar days.
+        segments: `[start, end]` pairs in seconds.
+        tz: A `tzinfo` for the calendar days.
 
     Returns:
-        Mapping of ``datetime.date`` to hours.
+        Mapping of `datetime.date` to hours.
     """
     hours: dict = {}
     for start, end in segments:
         t = datetime.fromtimestamp(start, tz)
         stop = datetime.fromtimestamp(end, tz)
+
         while t < stop:
             midnight = (t + timedelta(days=1)).replace(
-                hour=0, minute=0, second=0, microsecond=0
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
             )
             chunk_end = min(midnight, stop)
             chunk = (chunk_end - t).total_seconds() / 3600
@@ -450,7 +513,7 @@ def daily_hours(segments: list[list[float]], tz) -> dict:
 
 
 def format_duration(seconds) -> str:
-    """Format seconds as a short human duration like ``3h 12m``.
+    """Format seconds as a short human duration like `3h 12m`.
 
     Args:
         seconds: Duration in seconds (missing gives an empty string).
@@ -464,17 +527,20 @@ def format_duration(seconds) -> str:
     days, rem = divmod(seconds, 86400)
     hours, rem = divmod(rem, 3600)
     minutes, secs = divmod(rem, 60)
+
     if days:
         return f"{days}d {hours}h"
+
     if hours:
         return f"{hours}h {minutes:02d}m"
+
     if minutes:
         return f"{minutes}m {secs:02d}s"
     return f"{secs}s"
 
 
 def format_bytes(n) -> str:
-    """Format a byte count like ``1.2 GB``.
+    """Format a byte count like `1.2 GB`.
 
     Args:
         n: Number of bytes (missing gives an empty string).
@@ -493,7 +559,7 @@ def format_bytes(n) -> str:
 
 
 def format_ago(timestamp, now: float) -> str:
-    """Format how long ago a timestamp was, like ``2d ago``.
+    """Format how long ago a timestamp was, like `2d ago`.
 
     Args:
         timestamp: Seconds since the epoch.
@@ -505,6 +571,7 @@ def format_ago(timestamp, now: float) -> str:
     if is_missing(timestamp):
         return ""
     delta = max(0.0, now - float(timestamp))
+
     if delta < 60:
         return "just now"
     return format_duration(delta).split(" ")[0] + " ago"
@@ -525,7 +592,7 @@ def format_value(x) -> str:
 
 
 def change_from(value, base) -> float | None:
-    """Return ``value - base``, or None if either is missing.
+    """Return `value - base`, or None if either is missing.
 
     Args:
         value: A number or None.
@@ -540,16 +607,17 @@ def change_from(value, base) -> float | None:
 
 
 def format_change(diff) -> str:
-    """Format a difference from the baseline with its sign, e.g. ``+0.012``.
+    """Format a difference from the baseline with its sign, e.g. `+0.012`.
 
     Args:
         diff: The difference (missing gives an empty string).
 
     Returns:
-        ``+x`` or ``−x`` (with a minus sign), or ``±0``.
+        `+x` or `−x` (with a minus sign), or `±0`.
     """
     if is_missing(diff):
         return ""
+
     if math.isclose(diff, 0, abs_tol=1e-12):
         return "±0"
     return ("+" if diff > 0 else "−") + format_value(abs(diff))
@@ -560,10 +628,10 @@ def change_kind(diff, direction: str) -> str:
 
     Args:
         diff: The difference (value minus baseline), or None.
-        direction: ``"max"`` or ``"min"``.
+        direction: `"max"` or `"min"`.
 
     Returns:
-        ``"good"``, ``"bad"``, or ``""`` for no difference.
+        `"good"`, `"bad"`, or `""` for no difference.
     """
     if is_missing(diff) or math.isclose(diff, 0, abs_tol=1e-12):
         return ""
@@ -606,13 +674,14 @@ def _tex(text) -> str:
 
 
 def to_latex(
-    df: pl.DataFrame, bold: set[tuple[int, str]] | None = None
+    df: pl.DataFrame,
+    bold: set[tuple[int, str]] | None = None,
 ) -> str:
-    """Render a table as a LaTeX ``tabular`` (booktabs style).
+    """Render a table as a LaTeX `tabular` (booktabs style).
 
     Args:
         df: Table of already formatted values.
-        bold: Optional ``(row, column)`` cells to set in bold.
+        bold: Optional `(row, column)` cells to set in bold.
 
     Returns:
         LaTeX source.
@@ -630,6 +699,7 @@ def to_latex(
         for column, value in zip(df.columns, row):
             text = "" if value is None else value
             cell = _tex(text).replace("±", r"$\pm$").replace("−", "$-$")
+
             if (i, column) in bold:
                 cell = rf"\textbf{{{cell}}}"
             cells.append(cell)
@@ -651,17 +721,17 @@ def explorer_axis(values: list) -> dict:
     Numbers with no missing values become a numeric axis, on a log scale
     when they are all positive and span two decades or more (learning
     rates, weight decay). Anything else (text, booleans, or numbers with
-    gaps) becomes a categorical axis whose positions are ``0, 1, …`` in
-    sorted order, with missing values shown as ``–`` at the end.
+    gaps) becomes a categorical axis whose positions are `0, 1, …` in
+    sorted order, with missing values shown as `–` at the end.
 
     Args:
         values: One value per run (None or NaN for missing).
 
     Returns:
-        Dict with ``kind`` (``"number"`` or ``"category"``), ``log``,
-        ``positions`` (one float per run, as plotted), ``tickvals`` and
-        ``ticktext`` (axis ticks; empty for plain numeric axes) and
-        ``labels`` (each run's value as text, for hovers).
+        Dict with `kind` (`"number"` or `"category"`), `log`,
+        `positions` (one float per run, as plotted), `tickvals` and
+        `ticktext` (axis ticks; empty for plain numeric axes) and
+        `labels` (each run's value as text, for hovers).
     """
     present = [v for v in values if not is_missing(v)]
     numeric = bool(present) and all(
@@ -672,9 +742,11 @@ def explorer_axis(values: list) -> dict:
         "–" if is_missing(v) else (_short(v) if numeric else str(v))
         for v in values
     ]
+
     if numeric and len(present) == len(values):
         nums = [float(v) for v in values]
         log = min(nums) > 0 and max(nums) / min(nums) >= 100
+
         if not log:
             return {
                 "kind": "number",
@@ -696,11 +768,13 @@ def explorer_axis(values: list) -> dict:
             "ticktext": [f"1e{d}" for d in decades],
             "labels": labels,
         }
+
     if numeric:
         order = sorted({float(v) for v in present})
         names = [_short(v) for v in order]
     else:
         names = sorted({str(v) for v in present})
+
     if len(present) < len(values):
         names.append("–")
     slot = {name: i for i, name in enumerate(names)}

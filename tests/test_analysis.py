@@ -191,3 +191,21 @@ def test_baseline_changes():
     assert an.change_kind(0.0, "max") == ""
     tex = an.to_latex(pl.DataFrame({"acc": ["0.9  (−0.01)"]}), set())
     assert "$-$0.01" in tex
+
+
+def test_overlay_default_pairs_tags_with_the_same_leaf():
+    tags = ["val/acc", "train/loss", "val/loss", "train/lr", "lr"]
+    assert an.overlay_default(tags) == ["train/loss", "val/loss"]
+    assert an.overlay_default(["val/acc", "val/loss"]) == []
+
+
+def test_filter_numbers_take_prefixes():
+    frame = pl.DataFrame({"params": [25.6e6, 11.2e6, None]})
+    terms = an.parse_filter("params < 20M")
+    assert list(an.apply_filter(frame, terms)) == [False, True, False]
+
+
+def test_filter_keys_ignore_case_when_unambiguous():
+    frame = pl.DataFrame({"Dataset": ["cifar-100", "imagenet-1k"]})
+    terms = an.parse_filter("dataset == cifar-100")
+    assert list(an.apply_filter(frame, terms)) == [True, False]

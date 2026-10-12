@@ -1,6 +1,6 @@
-"""In-app documentation shown in the help dialog, one Markdown text per topic.
+"""In-app documentation shown on the Help page, one Markdown text per topic.
 
-The keys of ``HELP`` are the topics listed in the dialog. View names match the
+The keys of `HELP` are the topics listed in the dialog. View names match the
 sidebar views so each view opens its own topic.
 """
 
@@ -22,13 +22,14 @@ quick even with hundreds of runs.
 **What's read from each run:**
 - every scalar (PyTorch `add_scalar` and TF2/Keras summaries), with its best,
   last, min and max values and the step where they happened.
-- hyperparameters from the TensorBoard hparams plugin and from `config`,
-  `hparams`, `args`, `params`, `cfg` or `opts` files (`.yaml`, `.yml` or
-  `.json`).
+- hyperparameters from the TensorBoard hparams plugin and from config
+  files: `.yaml`, `.yml`, `.json` or `.toml` files named `config`,
+  `hparams`, `args`, `params`, `cfg` or `opts` by default. Other names can
+  be added in Fields and settings → Settings.
 - text summaries.
 - when events were written, to measure run time.
 
-**Your annotations** (tags, notes, stars, groups, properties) live in the
+**Your annotations** (tags, notes, stars, collections, fields) live in the
 database and are copied to `annotations.json` after every edit. Both files
 are in a hidden `.tensorboard-book` folder inside the runs folder, so they
 move with it but don't show up among the runs or their files.
@@ -38,12 +39,17 @@ move with it but don't show up among the runs or their files.
 2. summary cards with the key numbers.
 3. the controls for what to show (**Show** always adds extra columns).
 4. the content.
-5. a toolbar with actions and downloads: what's selected on the left,
-   actions in the middle, downloads last.
+5. under a table, a row of buttons: how many rows are
+   selected, the actions on them (greyed out until they apply), and the
+   downloads on the right.
 
-The sidebar filters (group, tags, status, search) appear in the views
+Every chart has a **Download figure** button: it saves the chart as a
+plotly JSON file, which reports that take plotly figures show as an
+interactive chart.
+
+The sidebar filters (collection, tags, status, search) appear in the views
 they change: Experiments and Timeline. **Help** at the end of the menu
-opens this guide from anywhere.
+opens this guide, every topic on one page.
 
 Nothing in your runs folder is ever changed or deleted.
 """,
@@ -51,29 +57,30 @@ Nothing in your runs folder is ever changed or deleted.
 The main table, with one row per run.
 
 **Columns.** Pick them in the three boxes at the top:
-- **Metrics**: the value per run is the *best* one (highest or lowest,
-  depending on the metric's direction, shown by ↑ and ↓) or the *last* one,
+- **Scalars**: the value per run is the *best* one (highest or lowest,
+  depending on the scalar's direction, shown by ↑ and ↓) or the *last* one,
   depending on the **Value** switch. The best value in each column is
-  highlighted. Your choice is saved per group.
+  highlighted. Your choice is saved per collection.
 - **Hyperparameters**: by default, the ones that differ between the runs
   shown.
 - **Show**: extra columns such as status, steps, compute time, start, tags
-  (as colored pills), groups and notes.
+  (as colored pills), collections, notes and your fields. Fields are listed
+  with their group, as `Model · params (M)`; see the *Fields* topic.
 
 **Filter.** Narrow the table with conditions, e.g.
 `optimizer.lr < 1e-3 and val/acc > 0.9`. See the *Filters* topic.
 
-**Actions.** Tick rows and use the toolbar under the table:
-- **Plot curves** opens the selected runs in Curves.
+**Actions.** Tick rows and use the buttons under the table. They are
+greyed out until they apply:
+- **Open in**: **Run details** (one run), **Curves**, or **TensorBoard**,
+  which starts TensorBoard on the selected runs (see the *TensorBoard*
+  topic).
 - **Compare** (two or more runs) opens them in Compare, even if they aren't
-  in a group.
-- **Details** (one run) opens it in Run details.
-- **Open in TensorBoard** starts TensorBoard on the selected runs (see the
-  *TensorBoard* topic).
-- **Group** adds them to a group (or a new one) or removes them from the
-  current one.
-- **Tag** adds or removes tags.
-- **Property** sets or clears a custom property on all selected runs.
+  in a collection.
+- **Add to collection** adds them to a collection (or a new one) or
+  removes them from the current one.
+- **Field** sets or clears a field on all selected runs. Pick **Tags** to
+  add or remove tags.
 - **Star** and **Archive**: archived runs are hidden unless you turn on
   *Show archived* in the sidebar. Their files are untouched.
 - **Export CSV** saves the table as shown.
@@ -82,24 +89,25 @@ The main table, with one row per run.
 the ⓘ next to *Active now*), total compute time, and disk usage.
 """,
     "Compare": """
-Compares the runs of one group (an ablation study) fairly.
+Compares the runs of one collection (an ablation study) fairly.
 
-**What to compare.** A group, **Selected runs** (the runs you ticked before
-pressing **Compare** in Experiments), or **Runs shown in Experiments** (the
-runs that pass the sidebar filters). Use **Show** to add tags, notes,
-status, groups or steps to the table, so you can check that you're
-comparing the runs you meant to. When seeds are aggregated, a **runs**
-column lists the runs behind each row.
+**What to compare.** A collection, **Selected runs** (the runs you ticked
+before pressing **Compare** in Experiments), or **Runs shown in
+Experiments** (the runs that pass the sidebar filters). Use **Show** to add
+tags, notes, status, collections, steps or fields to the table, so you can
+check that you're comparing the runs you meant to. When seeds are
+aggregated, a **runs** column lists the runs behind each row, number
+fields are averaged and choice fields list their values.
 
-**Selection metric.** For each run, the step where this metric is best is
-chosen (the "checkpoint"). Every metric in **Metrics at that step** is shown
+**Selection scalar.** For each run, the step where this scalar is best is
+chosen (the "checkpoint"). Every scalar in **Scalars at that step** is shown
 *at that same step*, using the logged value closest to it. That's how test
 scores should be reported: picking the best test value on its own would be
 cherry-picking.
 
 **Baseline.** Pick a run (or, with seeds aggregated, a config) to show
 each number's difference to it in brackets, e.g. `0.9414  (+0.0147)`.
-Green means better and orange means worse, following the metric's
+Green means better and orange means worse, following the scalar's
 direction. The differences are also in the exports. With *None*, the
 default, the table shows no differences.
 
@@ -111,11 +119,11 @@ decide that runs share a config:
 - all hyperparameters match except the ones named `seed`.
 
 **Below the table:**
-- a dot plot of the selection metric (with error bars when aggregated).
+- a dot plot of the selection scalar (with error bars when aggregated).
 - *What differs between these runs*: the hyperparameters that vary, with
   cells highlighted where they differ from the best run.
-- *Which settings lead to the best result*: pick a **Target metric** and
-  the **Settings** (hyperparameters and properties) to see, like
+- *Which settings lead to the best result*: pick a **Target scalar** and
+  the **Settings** (hyperparameters and number fields) to see, like
   TensorBoard's HParams dashboard, a parallel coordinates plot and the
   target against each setting, with the best run ringed. The parallel
   coordinates plot has one line per run, colored by the target. Drag along
@@ -125,27 +133,32 @@ decide that runs share a config:
 - exports as CSV, Markdown or LaTeX (with the best value in bold).
 
 The cards on top show how many runs and configs are compared and which one
-is best. The selection metric is saved with the group.
+is best. The selection scalar is saved with the collection.
 
-**Open in TensorBoard** (in the toolbar) starts TensorBoard on exactly the
+**Open in TensorBoard** (under the table) starts TensorBoard on exactly the
 compared runs. See the *TensorBoard* topic.
 
 The link in the address bar opens this exact comparison, so it can be
-shared or bookmarked. It keeps the group (or the runs, when they aren't a
-group), the selection metric, the metrics at that step, the **Show**
+shared or bookmarked. It keeps the collection (or the runs, when they
+aren't one), the selection scalar, the scalars at that step, the **Show**
 columns, the seed options and the baseline. Opening it asks for the
 password first if one is set.
 """,
     "Curves": """
 Overlays training curves of up to eight runs.
 
-- **Runs** and **Metrics**: one chart per metric, one line per run. Each run
+- **Runs** and **Scalars**: one chart per scalar, one line per run. Each run
   keeps its color while you add or remove others.
 - **Smoothing**: the same debiased exponential moving average as
   TensorBoard. The faint line is the raw data.
 - **X axis**: steps, hours since the run started (to compare speed), or wall
   time.
 - **Log y**: logarithmic y axis.
+- **Overlay scalars**: below the charts, draws several scalars of the chosen
+  runs on one chart, to compare scalars on the same scale (for example
+  `train/loss` and `val/loss`). It starts with scalars that share a name
+  after the last `/`. **Color by** run or scalar; the other one is told
+  apart by the line style.
 
 Long curves are thinned to at most 5000 points for plotting, always keeping
 the first, last, lowest and highest points. Values in tables are always
@@ -157,7 +170,10 @@ Shows when runs were running.
 - **Bars**: one per run, from its first to its last logged event. Hover for
   the span, the compute time and the status. Click a bar to open the run.
   The dotted line is now.
-- **Color by**: group, status or first tag.
+- **Color by**: collection, status or tag. A run with several tags takes
+  the color of the first one in the order of the tag options (Fields and
+  settings → Fields → Rename values), and the hover lists all of them.
+  A run in several collections takes the color of the oldest one.
 - **Runs at once**: how many runs were running at each moment. Useful to
   spot idle or overloaded machines.
 - **Compute hours per day**: a calendar of how many hours of runs happened
@@ -178,54 +194,90 @@ isn't included.
     "Run details": """
 Everything about one run.
 
-**Top.** Status, groups, tags and flags, then compute time, wall span,
+**Top.** Status, collections, tags and flags, then compute time, wall span,
 throughput (steps per second of compute), last step, time since the last
 event, and disk size.
 
 **TensorBoard** next to the badges opens this run in TensorBoard.
 
-**Tags, notes and properties.** Press **Edit tags, notes and properties**
-next to the badges, change tags, groups, star, archive flag, notes and
-custom properties in the form, and press **Save**. Property values also
-show as purple badges.
+**Edit** (next to **TensorBoard**) opens the editor in place of the
+page: one card per field group, with Tags
+under *General*, then the run's collections, star and archive flag, then
+its notes. Each field has the input of its type: a number (typed in the
+field's unit, and it can end in a prefix such as `25.6M`), a choice or
+tags list (type a new value to add it as an option), yes/no, a date, a
+link or text. **Add a field** defines a new one without leaving the
+editor. Press **Save changes**, or **Cancel**.
 
 **Tabs:**
+- **Overview**: the run's fields in cards, one per field group, with
+  units and colored options, then its collections. Empty fields are hidden
+  unless you turn on **Show empty fields**.
 - **Artifacts**: every file in the run folder except event files. Select a
   file to preview it (images, text and config files, CSV/TSV tables, audio,
   video) and download it. Select several to download a zip. For text
-  files, pick another run to see a diff of the same file, e.g.
-  `config.yaml`.
-- **Metrics**: every scalar with best, best step, last, min, max, number of
+  files, pick another run to see a diff of the same file. A config file
+  is compared with the config file of the other run, even when the two
+  have different names.
+- **Scalars**: every scalar with best, best step, last, min, max, number of
   points and NaN/inf count.
-- **Hyperparameters**: the flattened config and where each value came from.
+- **Hyperparameters**: the flattened config, where each value came from,
+  and the run's main config file. **Compare with another run** lists the
+  hyperparameters that differ, whatever the names and formats of the two
+  config files, and their line-by-line difference.
 - **Text**: text summaries (e.g. from `add_text`).
 - **Timing**: activity segments and the pauses between them.
 
-The command to open this run in TensorBoard is at the bottom of the Metrics
+The command to open this run in TensorBoard is at the bottom of the Scalars
 tab.
 """,
-    "Manage": """
-Housekeeping.
+    "Collections": """
+Collections are named sets of runs, such as a sweep or an ablation study.
+A run can be in several collections, and deleting a collection keeps its
+runs.
 
-- **Groups**: create, rename, describe, change members, delete. Deleting a
-  group keeps its runs.
-- **Tags**: rename (renaming to an existing tag merges them) or delete.
-- **Properties**: define custom properties (see the *Properties* topic),
-  rename them, describe them or delete them.
-- **Metric directions**: whether higher or lower is better for each
-  metric. Names with *loss*, *error*, *mse* and similar words
-  default to lower. *auto* follows that guess. Pick
-  *higher* or *lower* to fix a metric, and **Reset all to auto** to undo
-  every choice.
-- **Disk usage**: per run and per group.
+- **New collection**: a name and an optional description. You can also
+  select runs in Experiments and use **Add to collection** under the
+  table.
+- **Edit collection**: rename it, describe it, change its runs, or delete
+  it.
+- Each collection remembers its selection scalar (from Compare) and its
+  scalar columns (from Experiments).
+
+Pick a collection in the sidebar **Collection** filter to see only its
+runs, or in Compare to compare them.
+""",
+    "Fields and settings": """
+Everything about how this runs folder is described, in four tabs.
+
+- **Fields**: the fields you add to runs (see the *Fields* topic). Edit
+  the table and press **Save fields**: add a row to create a field, change
+  a name to rename it (its values follow), change its group, type, unit,
+  scale, decimals, direction or options, or untick **Visible** to keep it
+  out of **Show** by default. Changing the type converts the values and
+  stops with a message if one doesn't fit. Tick **Delete** to remove a
+  field and its values when you save. **Rename values** changes a value
+  on every run that has it: fix a typo, merge two spellings such as
+  `resnet` and `ResNet`, reorder (which sets the colors) or delete the
+  values of a choice or tags field, including the built-in `Tags`. The
+  table only edits the list a field offers, and keeps the values runs
+  still use. **Export
+  fields** and **Import fields** copy the definitions to another runs
+  folder; values are not included.
+- **Scalars**: for each logged scalar, its group (the tag up to the last
+  `/` unless you change it), whether higher or lower is better, its unit,
+  scale and decimals. Names with *loss*, *error*, *mse* and similar words
+  default to lower; *auto* follows that guess. **Reset all to auto**
+  forgets every direction you set.
 - **Settings**: the active threshold, the pause length, the seed pattern,
-  the stored points per curve, the zip size limit, and the TensorBoard
-  limit and extra arguments. Changing the pause or the points re-parses all
-  runs.
-- **Backup**: download or import the annotations JSON, and forget runs whose
-  folders were deleted.
+  the stored points per curve, the zip size limit, the TensorBoard limit
+  and extra arguments, and the names of config files. Changing the pause
+  or the points re-parses all runs.
+- **Project**: where the runs folder and database are, disk usage per run
+  and per collection, and **Backup**: download or import the annotations
+  JSON, and forget runs whose folders were deleted.
 
-Read-only visitors only see Disk usage and Backup.
+Read-only visitors see the fields and scalars but can't change them.
 """,
     "Filters": """
 The **Filter** box in Experiments takes conditions joined by `and`:
@@ -234,9 +286,9 @@ The **Filter** box in Experiments takes conditions joined by `and`:
 optimizer.lr < 1e-3 and val/acc > 0.9 and model ~ resnet
 ```
 
-- **Keys**: hyperparameters (dotted names, as in the table), metric tags
-  (using the Best/Last value shown), custom properties (by name, or
-  `prop:name` if a hyperparameter has the same name), `run`, `status` or
+- **Keys**: hyperparameters (dotted names, as in the table), scalar tags
+  (using the Best/Last value shown), fields (by name, or `prop:name` if a
+  hyperparameter has the same name), `run`, `status` or
   `steps`. Wrap keys with spaces in backticks.
 - **Operators**: `==` (or `=`), `!=`, `<`, `<=`, `>`, `>=`, and `~` for a
   case-insensitive regular expression, e.g. `run ~ ^aug_`.
@@ -246,7 +298,7 @@ optimizer.lr < 1e-3 and val/acc > 0.9 and model ~ resnet
 The sidebar filters appear in Experiments and Timeline, the views they
 change, and keep their values while you visit other views:
 - **Search** looks for text in names, tags, notes and config values.
-- **Group**, **Tags**, **Status**, **Starred only** and **Show archived**
+- **Collection**, **Tags**, **Status**, **Starred only** and **Show archived**
   narrow down the runs.
 
 Compare can use the same runs through **Runs shown in Experiments**.
@@ -257,7 +309,7 @@ Curves and Run details list every run that isn't archived.
 so the status says what can be known:
 - **Active**: an event was written recently. The default is within the
   last 5 hours, so a run whose epochs take hours still counts as active.
-  Change it in Manage → Settings.
+  Change it in Fields and settings → Settings.
 - **Stopped**: nothing written for longer than that. The run may have
   finished, crashed, or been killed.
 - **Missing**: the folder is gone. Its annotations are kept.
@@ -270,28 +322,43 @@ so the status says what can be known:
   (e.g. one epoch), or it would cut normal training into pieces.
 - **Throughput**: steps per second of compute.
 """,
-    "Properties": """
-Properties are values you add to runs by hand, for things the logs don't
-say or that you decide afterwards: a **number** (GPU hours, a human rating,
-a cost) or a **category** (dataset, hardware, who ran it, a verdict).
+    "Fields": """
+Fields are values you add to runs by hand, for things the logs don't say
+or that you decide afterwards: the dataset, the parameter count, the GPU,
+a rating, whether someone reviewed the run, a link to the write-up.
 
-1. Define a property once in **Manage → Properties**: a name, the type and
-   an optional description.
-2. Give runs a value in **Run details → Edit tags, notes and properties**,
-   or for many runs at once in **Experiments**: select rows, then
-   **Property** in the toolbar. For a category you can pick an existing
-   value or type a new one.
-3. Show them as columns with **Show** in Experiments and Compare. They sit
-   next to the metrics, and categories show as colored pills. When Compare
-   aggregates seeds, numbers are averaged and categories are listed.
+**Each field has:**
+- a **name** and an optional **group** (such as *Data*, *Model* or
+  *Review*). Fields of a group stay together everywhere: in the Overview
+  cards, in the Edit form and in **Show** (`Model · params`).
+- a **type**: *number*, *text*, *choice* (one of a list), *tags* (several
+  of a list), *yes/no*, *date* or *link*.
+- for numbers, a **unit**, a **scale** prefix (k, M, G, m, µ, Ki, Mi, …)
+  and **decimals** for display, and whether **higher or lower is better**.
+  Values are stored as entered, so `25.6M` with scale *M* shows as
+  `25.6 M` and still sorts and filters as 25,600,000. A number that ranks
+  gets ↑ or ↓ in its header and its best value highlighted, like a scalar.
+- for choice and tags, an ordered list of **options**. An option's place
+  in the list gives its color, so a value keeps its color everywhere.
+  Typing a value that isn't an option yet adds it at the end.
+- a **description**, shown as help next to its input.
 
-Properties also work in the **Filter** box (`dataset == cifar-100`,
-`rating >= 4`) and in the sidebar search, and they are saved in the
-annotations backup with everything else.
+**Using them:**
+1. Define fields in **Fields and settings → Fields**.
+2. Give runs values in **Run details → Edit**, or for many runs at once in
+   **Experiments**: select rows, then **Field** in the toolbar.
+3. Show them as columns with **Show** in Experiments and Compare, filter
+   on them (`Dataset == cifar-100`, `Params < 20M`, `Rating >= 4`) and
+   find them with the sidebar search.
+
+The run tags are the built-in `Tags` field: its options and colors are
+managed the same way, and it can't be renamed or deleted. Fields are saved
+in the annotations backup with everything else.
 """,
     "TensorBoard": """
-**Open in TensorBoard** starts TensorBoard on exactly the runs you pick: the
-selected rows in Experiments, the runs being compared in Compare, or the
+**TensorBoard** starts TensorBoard on exactly the runs you pick: the
+selected rows in Experiments (under **Open in**), the runs being compared
+in Compare (**Open in TensorBoard**), or the
 run shown in Run details (the **TensorBoard** button). Use it to look at
 images, histograms and anything else `tensorboard-book` doesn't show.
 
@@ -302,7 +369,7 @@ images, histograms and anything else `tensorboard-book` doesn't show.
   same runs reuses the running TensorBoard.
 - Running TensorBoards are listed below the toolbar with a **Stop** button.
   All of them stop when `tensorboard-book` exits. At most 5 run at once by
-  default (Manage → Settings, which also takes extra TensorBoard
+  default (Fields and settings → Settings, which also takes extra TensorBoard
   arguments).
 - TensorBoard has no password, so it only listens on this machine
   (127.0.0.1). If you reach `tensorboard-book` through an SSH tunnel, forward

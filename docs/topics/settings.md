@@ -1,13 +1,21 @@
-# Metric directions and settings
+# Scalars and settings
 
-## Metric directions
+Both are in **Fields and settings**, in the **Scalars** and **Settings**
+tabs.
 
-For each metric, the app needs to know whether higher or lower is better.
-Names containing `loss`, `error`, `mse`, `mae`, `wer`, `fid`
-and similar words default to lower is better, and everything else to higher is
-better. In **Manage → Metric directions** each metric is *auto* (follows
-that guess) until you pick *higher* or *lower*. **Reset all
-to auto** undoes every choice. Arrows (↑/↓) in column headers show the current choice.
+## Scalars
+
+Each logged scalar has:
+
+- a **group**: the tag up to the last `/` (`val` for `val/acc`), unless you
+  change it.
+- a **direction**: whether higher or lower is better. Names containing
+  `loss`, `error`, `mse`, `mae`, `wer`, `fid` and similar words default to
+  lower is better, and everything else to higher is better. Each scalar is
+  *auto* (follows that guess) until you pick *higher* or *lower*. **Reset
+  all to auto** forgets every direction you set. Arrows (↑/↓) in column
+  headers show the current choice.
+- a **unit**, a **scale** prefix and **decimals**, for display.
 
 ## Settings
 
@@ -20,6 +28,7 @@ to auto** undoes every choice. Arrows (↑/↓) in column headers show the curre
 | Max zip download | 1024 MB | |
 | Max TensorBoards at once | 5 | Each instance is a separate process. |
 | Extra TensorBoard arguments | (empty) | Added to every launch, e.g. `--samples_per_plugin images=100`. |
+| Config file names | `config.*, hparams.*, args.*, params.*, cfg.*, opts.*` | Patterns of the `.yaml`, `.yml`, `.json` or `.toml` files read as hyperparameters. See [Config files](../runs.md#config-files). |
 
 The **Auto** toggle in the sidebar rescans every 60 seconds and refreshes the
 page when something changed.
