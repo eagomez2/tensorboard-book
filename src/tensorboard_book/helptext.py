@@ -1,6 +1,6 @@
 """In-app documentation shown on the Help page, one Markdown text per topic.
 
-The keys of ``HELP`` are the topics listed in the dialog. View names match the
+The keys of `HELP` are the topics listed in the dialog. View names match the
 sidebar views so each view opens its own topic.
 """
 
@@ -22,9 +22,10 @@ quick even with hundreds of runs.
 **What's read from each run:**
 - every scalar (PyTorch `add_scalar` and TF2/Keras summaries), with its best,
   last, min and max values and the step where they happened.
-- hyperparameters from the TensorBoard hparams plugin and from `config`,
-  `hparams`, `args`, `params`, `cfg` or `opts` files (`.yaml`, `.yml` or
-  `.json`).
+- hyperparameters from the TensorBoard hparams plugin and from config
+  files: `.yaml`, `.yml`, `.json` or `.toml` files named `config`,
+  `hparams`, `args`, `params`, `cfg` or `opts` by default. Other names can
+  be added in Fields and settings → Settings.
 - text summaries.
 - when events were written, to measure run time.
 
@@ -56,8 +57,8 @@ Nothing in your runs folder is ever changed or deleted.
 The main table, with one row per run.
 
 **Columns.** Pick them in the three boxes at the top:
-- **Metrics**: the value per run is the *best* one (highest or lowest,
-  depending on the metric's direction, shown by ↑ and ↓) or the *last* one,
+- **Scalars**: the value per run is the *best* one (highest or lowest,
+  depending on the scalar's direction, shown by ↑ and ↓) or the *last* one,
   depending on the **Value** switch. The best value in each column is
   highlighted. Your choice is saved per collection.
 - **Hyperparameters**: by default, the ones that differ between the runs
@@ -98,15 +99,15 @@ check that you're comparing the runs you meant to. When seeds are
 aggregated, a **runs** column lists the runs behind each row, number
 fields are averaged and choice fields list their values.
 
-**Selection metric.** For each run, the step where this metric is best is
-chosen (the "checkpoint"). Every metric in **Metrics at that step** is shown
+**Selection scalar.** For each run, the step where this scalar is best is
+chosen (the "checkpoint"). Every scalar in **Scalars at that step** is shown
 *at that same step*, using the logged value closest to it. That's how test
 scores should be reported: picking the best test value on its own would be
 cherry-picking.
 
 **Baseline.** Pick a run (or, with seeds aggregated, a config) to show
 each number's difference to it in brackets, e.g. `0.9414  (+0.0147)`.
-Green means better and orange means worse, following the metric's
+Green means better and orange means worse, following the scalar's
 direction. The differences are also in the exports. With *None*, the
 default, the table shows no differences.
 
@@ -118,10 +119,10 @@ decide that runs share a config:
 - all hyperparameters match except the ones named `seed`.
 
 **Below the table:**
-- a dot plot of the selection metric (with error bars when aggregated).
+- a dot plot of the selection scalar (with error bars when aggregated).
 - *What differs between these runs*: the hyperparameters that vary, with
   cells highlighted where they differ from the best run.
-- *Which settings lead to the best result*: pick a **Target metric** and
+- *Which settings lead to the best result*: pick a **Target scalar** and
   the **Settings** (hyperparameters and number fields) to see, like
   TensorBoard's HParams dashboard, a parallel coordinates plot and the
   target against each setting, with the best run ringed. The parallel
@@ -132,31 +133,31 @@ decide that runs share a config:
 - exports as CSV, Markdown or LaTeX (with the best value in bold).
 
 The cards on top show how many runs and configs are compared and which one
-is best. The selection metric is saved with the collection.
+is best. The selection scalar is saved with the collection.
 
 **Open in TensorBoard** (under the table) starts TensorBoard on exactly the
 compared runs. See the *TensorBoard* topic.
 
 The link in the address bar opens this exact comparison, so it can be
 shared or bookmarked. It keeps the collection (or the runs, when they
-aren't one), the selection metric, the metrics at that step, the **Show**
+aren't one), the selection scalar, the scalars at that step, the **Show**
 columns, the seed options and the baseline. Opening it asks for the
 password first if one is set.
 """,
     "Curves": """
 Overlays training curves of up to eight runs.
 
-- **Runs** and **Metrics**: one chart per metric, one line per run. Each run
+- **Runs** and **Scalars**: one chart per scalar, one line per run. Each run
   keeps its color while you add or remove others.
 - **Smoothing**: the same debiased exponential moving average as
   TensorBoard. The faint line is the raw data.
 - **X axis**: steps, hours since the run started (to compare speed), or wall
   time.
 - **Log y**: logarithmic y axis.
-- **Overlay metrics**: below the charts, draws several metrics of the chosen
-  runs on one chart, to compare metrics on the same scale (for example
-  `train/loss` and `val/loss`). It starts with metrics that share a name
-  after the last `/`. **Color by** run or metric; the other one is told
+- **Overlay scalars**: below the charts, draws several scalars of the chosen
+  runs on one chart, to compare scalars on the same scale (for example
+  `train/loss` and `val/loss`). It starts with scalars that share a name
+  after the last `/`. **Color by** run or scalar; the other one is told
   apart by the line style.
 
 Long curves are thinned to at most 5000 points for plotting, always keeping
@@ -169,7 +170,10 @@ Shows when runs were running.
 - **Bars**: one per run, from its first to its last logged event. Hover for
   the span, the compute time and the status. Click a bar to open the run.
   The dotted line is now.
-- **Color by**: collection, status or first tag.
+- **Color by**: collection, status or tag. A run with several tags takes
+  the color of the first one in the order of the tag options (Fields and
+  settings → Fields → Rename values), and the hover lists all of them.
+  A run in several collections takes the color of the oldest one.
 - **Runs at once**: how many runs were running at each moment. Useful to
   spot idle or overloaded machines.
 - **Compute hours per day**: a calendar of how many hours of runs happened
@@ -212,15 +216,19 @@ editor. Press **Save changes**, or **Cancel**.
 - **Artifacts**: every file in the run folder except event files. Select a
   file to preview it (images, text and config files, CSV/TSV tables, audio,
   video) and download it. Select several to download a zip. For text
-  files, pick another run to see a diff of the same file, e.g.
-  `config.yaml`.
-- **Metrics**: every scalar with best, best step, last, min, max, number of
+  files, pick another run to see a diff of the same file. A config file
+  is compared with the config file of the other run, even when the two
+  have different names.
+- **Scalars**: every scalar with best, best step, last, min, max, number of
   points and NaN/inf count.
-- **Hyperparameters**: the flattened config and where each value came from.
+- **Hyperparameters**: the flattened config, where each value came from,
+  and the run's main config file. **Compare with another run** lists the
+  hyperparameters that differ, whatever the names and formats of the two
+  config files, and their line-by-line difference.
 - **Text**: text summaries (e.g. from `add_text`).
 - **Timing**: activity segments and the pauses between them.
 
-The command to open this run in TensorBoard is at the bottom of the Metrics
+The command to open this run in TensorBoard is at the bottom of the Scalars
 tab.
 """,
     "Collections": """
@@ -233,8 +241,8 @@ runs.
   table.
 - **Edit collection**: rename it, describe it, change its runs, or delete
   it.
-- Each collection remembers its selection metric (from Compare) and its
-  metric columns (from Experiments).
+- Each collection remembers its selection scalar (from Compare) and its
+  scalar columns (from Experiments).
 
 Pick a collection in the sidebar **Collection** filter to see only its
 runs, or in Compare to compare them.
@@ -256,20 +264,20 @@ Everything about how this runs folder is described, in four tabs.
   still use. **Export
   fields** and **Import fields** copy the definitions to another runs
   folder; values are not included.
-- **Metrics**: for each logged metric, its group (the tag up to the last
+- **Scalars**: for each logged scalar, its group (the tag up to the last
   `/` unless you change it), whether higher or lower is better, its unit,
   scale and decimals. Names with *loss*, *error*, *mse* and similar words
   default to lower; *auto* follows that guess. **Reset all to auto**
   forgets every direction you set.
 - **Settings**: the active threshold, the pause length, the seed pattern,
-  the stored points per curve, the zip size limit, and the TensorBoard
-  limit and extra arguments. Changing the pause or the points re-parses all
-  runs.
+  the stored points per curve, the zip size limit, the TensorBoard limit
+  and extra arguments, and the names of config files. Changing the pause
+  or the points re-parses all runs.
 - **Project**: where the runs folder and database are, disk usage per run
   and per collection, and **Backup**: download or import the annotations
   JSON, and forget runs whose folders were deleted.
 
-Read-only visitors see the fields and metrics but can't change them.
+Read-only visitors see the fields and scalars but can't change them.
 """,
     "Filters": """
 The **Filter** box in Experiments takes conditions joined by `and`:
@@ -278,7 +286,7 @@ The **Filter** box in Experiments takes conditions joined by `and`:
 optimizer.lr < 1e-3 and val/acc > 0.9 and model ~ resnet
 ```
 
-- **Keys**: hyperparameters (dotted names, as in the table), metric tags
+- **Keys**: hyperparameters (dotted names, as in the table), scalar tags
   (using the Best/Last value shown), fields (by name, or `prop:name` if a
   hyperparameter has the same name), `run`, `status` or
   `steps`. Wrap keys with spaces in backticks.
@@ -329,7 +337,7 @@ a rating, whether someone reviewed the run, a link to the write-up.
   and **decimals** for display, and whether **higher or lower is better**.
   Values are stored as entered, so `25.6M` with scale *M* shows as
   `25.6 M` and still sorts and filters as 25,600,000. A number that ranks
-  gets ↑ or ↓ in its header and its best value highlighted, like a metric.
+  gets ↑ or ↓ in its header and its best value highlighted, like a scalar.
 - for choice and tags, an ordered list of **options**. An option's place
   in the list gives its color, so a value keeps its color everywhere.
   Typing a value that isn't an option yet adds it at the end.

@@ -1930,6 +1930,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "streamlit" },
     { name = "tensorboard" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -1950,6 +1951,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "streamlit", specifier = ">=1.51" },
     { name = "tensorboard", specifier = ">=2.12" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=1.1" },
 ]
 
 [package.metadata.requires-dev]

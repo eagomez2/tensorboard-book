@@ -19,7 +19,7 @@ set.
 ## 2. Find the best run
 
 The app opens on **Experiments**. Each row is a run, with the best value
-of each metric. ↑ means higher is better, ↓ means lower is better.
+of each scalar. ↑ means higher is better, ↓ means lower is better.
 
 - Type `optimizer.lr < 1e-3 and val/acc > 0.9` in **Filter**.
 - In the sidebar, set **Collection** to `lr_sweep`.
@@ -33,7 +33,7 @@ of each metric. ↑ means higher is better, ↓ means lower is better.
 Open **Compare**, pick `aug_ablation` and turn on **Aggregate seeds**.
 
 Each run is read at the step where `val/acc` was best, and the other
-metrics are taken at that same step. Seeds are averaged into mean ± std.
+scalars are taken at that same step. Seeds are averaged into mean ± std.
 You can export the table as CSV, Markdown or LaTeX.
 
 Further down, **Which settings lead to the best result** works like
@@ -42,7 +42,7 @@ TensorBoard's HParams dashboard.
 ## 4. Look at curves and at one run
 
 - **Curves** overlays runs, with the same smoothing as TensorBoard, and can
-  draw several metrics on one chart.
+  draw several scalars on one chart.
 - **Run details** shows one run. Pick `resnet_lr3e-3`: the **Timing** tab
   shows that it crashed and was resumed. The **Overview** tab shows its
   fields, the **Artifacts** tab its files, and **Edit** changes its tags,

@@ -69,7 +69,8 @@ def test_fields_roundtrip(tmp_path):
     conn.execute("INSERT INTO runs(fingerprint, path) VALUES ('a', 'run_a')")
     conn.execute("INSERT INTO runs(fingerprint, path) VALUES ('b', 'run_b')")
     db.create_field(
-        conn, Field("gpu_hours", group="Cost", type="number", unit="h")
+        conn,
+        Field("gpu_hours", group="Cost", type="number", unit="h"),
     )
     db.create_field(conn, Field("dataset", type="choice"))
     db.create_field(conn, Field("issues", type="tags"))
@@ -87,7 +88,9 @@ def test_fields_roundtrip(tmp_path):
     with pytest.raises(ValueError):
         db.create_field(conn, Field("dataset", type="number"))
     db.update_field(
-        conn, "dataset", Field("data", group="Data", type="choice")
+        conn,
+        "dataset",
+        Field("data", group="Data", type="choice"),
     )
     assert db.load_run_fields(conn)[1]["data"] == "imagenet"
     assert db.get_field(conn, "data").group == "Data"

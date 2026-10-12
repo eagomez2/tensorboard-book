@@ -1,8 +1,8 @@
 """Generate a realistic folder of fake TensorBoard runs for trying the app.
 
 The demo covers the cases the app handles: a learning-rate sweep with a
-diverged run and a resumed run, a seed ablation, Keras-style ``train/`` and
-``validation/`` subfolders written as TF2 tensor summaries, a run that is still
+diverged run and a resumed run, a seed ablation, Keras-style `train/` and
+`validation/` subfolders written as TF2 tensor summaries, a run that is still
 "active", hyperparameters from events and config files, text summaries, and
 artifacts such as checkpoints, images, logs and CSVs.
 """
@@ -58,7 +58,7 @@ def _write_events(logdir: Path, events: list) -> None:
     """Write Event protos to a new event file dated like the simulated run.
 
     TensorBoard's own writer stamps the file with the current time, so the
-    records are written directly with its ``RecordWriter`` instead.
+    records are written directly with its `RecordWriter` instead.
     """
     from tensorboard.summary.writer.record_writer import RecordWriter
 
@@ -76,10 +76,16 @@ def _write_events(logdir: Path, events: list) -> None:
 
 
 def _curve(
-    steps: np.ndarray, final: float, tau: float, noise: float, rng
+    steps: np.ndarray,
+    final: float,
+    tau: float,
+    noise: float,
+    rng,
 ) -> np.ndarray:
     return final * (1 - np.exp(-steps / tau)) + rng.normal(
-        0, noise, len(steps)
+        0,
+        noise,
+        len(steps),
     )
 
 
@@ -120,6 +126,7 @@ def _training_events(
         )
 
     events = [event_pb2.Event(wall_time=start, file_version="brain.Event:2")]
+
     if hparams:
         summary = summary_v2.hparams_pb(hparams, start_time_secs=int(start))
         events.append(event_pb2.Event(wall_time=start, summary=summary))
@@ -141,7 +148,9 @@ def _training_events(
         )
     val_steps = np.arange(2500, last_step + 1, 2500)
     acc = np.clip(
-        _curve(val_steps, final_acc, total_steps / 5, 0.004, rng), 0, 1
+        _curve(val_steps, final_acc, total_steps / 5, 0.004, rng),
+        0,
+        1,
     )
     for step, value in zip(val_steps, acc):
         if nan_after is not None and step > nan_after:
@@ -159,6 +168,7 @@ def _training_events(
                 },
             )
         )
+
     if last_step == total_steps and nan_after is None:
         test = float(np.clip(acc[-1] - abs(rng.normal(0.01, 0.004)), 0, 1))
         events.append(
@@ -186,6 +196,7 @@ def _keras_events(start: float, epochs: int, rng, split: str) -> list:
             ),
         ]:
             metadata = None
+
             if epoch == 0:  # TF2 only writes plugin metadata once per tag.
                 metadata = summary_pb2.SummaryMetadata(
                     plugin_data=summary_pb2.SummaryMetadata.PluginData(
@@ -212,7 +223,10 @@ def _keras_events(start: float, epochs: int, rng, split: str) -> list:
 
 
 def _artifacts(
-    run: Path, seed: int, steps: list[int], config: str | None
+    run: Path,
+    seed: int,
+    steps: list[int],
+    config: str | None,
 ) -> None:
     """Write checkpoints, sample images, a log and a CSV into a run folder."""
     rng = np.random.default_rng(seed)
@@ -236,6 +250,7 @@ def _artifacts(
         for i in range(50)
     ]
     (run / "preds_val.csv").write_text("\n".join(rows) + "\n")
+
     if config:
         (run / "config.yaml").write_text(config)
 
@@ -250,12 +265,13 @@ def make_demo(dest: str | Path) -> Path:
         The demo folder.
 
     Raises:
-        FileExistsError: If ``dest`` exists and is not empty.
+        FileExistsError: If `dest` exists and is not empty.
     """
     from tensorboard.compat.proto import event_pb2, summary_pb2
     from tensorboard.util import tensor_util
 
     dest = Path(dest)
+
     if dest.exists() and any(dest.iterdir()):
         raise FileExistsError(f"{dest} is not empty")
     dest.mkdir(parents=True, exist_ok=True)
@@ -283,7 +299,13 @@ def make_demo(dest: str | Path) -> Path:
             "batch_size": 256,
         }
         events = _training_events(
-            start, 50000, acc, rng, hparams=hp, lr=lr, **extra
+            start,
+            50000,
+            acc,
+            rng,
+            hparams=hp,
+            lr=lr,
+            **extra,
         )
         _write_events(dest / name, events)
         config = (
@@ -299,7 +321,12 @@ def make_demo(dest: str | Path) -> Path:
             start = now - 11 * DAY + j * 1.5 * DAY + seed * 0.2 * DAY
             acc = (0.905 if aug == "none" else 0.921) + rng.normal(0, 0.003)
             events = _training_events(
-                start, 20000, acc, rng, steps_per_sec=3.0, lr=5e-4
+                start,
+                20000,
+                acc,
+                rng,
+                steps_per_sec=3.0,
+                lr=5e-4,
             )
             _write_events(dest / name, events)
             config = (
@@ -344,7 +371,8 @@ def make_demo(dest: str | Path) -> Path:
         events.insert(
             1,
             event_pb2.Event(
-                wall_time=start, summary=summary_pb2.Summary(value=[note])
+                wall_time=start,
+                summary=summary_pb2.Summary(value=[note]),
             ),
         )
         _write_events(dest / name, events)
@@ -431,10 +459,13 @@ def _write_annotations(dest: Path) -> None:
             "GPU": gpu[name],
             "Params": params[name],
         }
+
         if name in rating:
             r["fields"]["Rating"] = rating[name]
+
         if name in reviewed:
             r["fields"]["Reviewed"] = reviewed[name]
+
         if name in report:
             r["fields"]["Report"] = report[name]
     data = {

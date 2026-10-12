@@ -1,19 +1,19 @@
 """Open a selection of runs in TensorBoard (the tensorboard-view idea).
 
-TensorBoard shows every run below one ``--logdir``. To show only some
+TensorBoard shows every run below one `--logdir`. To show only some
 runs, their folders are symlinked into a temporary folder and TensorBoard
 is pointed at that folder. The links keep each run's name, so TensorBoard
 lists the runs under the same names as tensorboard-book.
 
 Two ways to use it:
 
-* ``tensorboard-book view --logdir RUN [RUN ...] [TensorBoard args]``
+* `tensorboard-book view --logdir RUN [RUN ...] [TensorBoard args]`
   runs TensorBoard in the foreground, like the original tensorboard-view.
 * The app starts instances in the background with :func:`start`. They
   are listed by :func:`running`, stopped with :func:`stop`, and all of
   them stop when the app exits.
 
-TensorBoard has no password, so instances listen on ``127.0.0.1`` unless
+TensorBoard has no password, so instances listen on `127.0.0.1` unless
 told otherwise; that way they never expose runs past the app's login.
 """
 
@@ -35,17 +35,17 @@ FIRST_PORT = 6006
 
 
 def link_runs(runs: dict[str, Path], dest: Path) -> Path:
-    """Symlink run folders into ``dest`` under the given names.
+    """Symlink run folders into `dest` under the given names.
 
     Names with slashes (runs nested below the root) become subfolders, so
-    TensorBoard shows the same ``a/b`` name.
+    TensorBoard shows the same `a/b` name.
 
     Args:
         runs: Mapping of display name to run folder.
         dest: An empty folder to put the links in.
 
     Returns:
-        ``dest``.
+        `dest`.
     """
     for name, path in runs.items():
         link = dest / name
@@ -55,7 +55,7 @@ def link_runs(runs: dict[str, Path], dest: Path) -> Path:
 
 
 def unique_names(paths: list[str | Path]) -> dict[str, Path]:
-    """Name folders by their base name, adding ``-2``, ``-3`` on clashes.
+    """Name folders by their base name, adding `-2`, `-3` on clashes.
 
     Args:
         paths: Run folders given on the command line.
@@ -67,6 +67,7 @@ def unique_names(paths: list[str | Path]) -> dict[str, Path]:
     for path in paths:
         base = Path(path).resolve().name or "run"
         name, n = base, 1
+
         while name in names:
             n += 1
             name = f"{base}-{n}"
@@ -75,7 +76,7 @@ def unique_names(paths: list[str | Path]) -> dict[str, Path]:
 
 
 def free_port(host: str = LOCAL_HOST, start: int = FIRST_PORT) -> int:
-    """Find the first port from ``start`` that nothing listens on.
+    """Find the first port from `start` that nothing listens on.
 
     Args:
         host: Address the server will bind to.
@@ -111,7 +112,7 @@ def command(logdir: Path, host: str, port: int, extra: list[str]) -> list:
         extra: Additional TensorBoard arguments.
 
     Returns:
-        The argument list for ``subprocess``.
+        The argument list for `subprocess`.
     """
     return [
         sys.executable,
@@ -130,12 +131,12 @@ def command(logdir: Path, host: str, port: int, extra: list[str]) -> list:
 def view(paths: list[str | Path], extra: list[str]) -> int:
     """Run TensorBoard in the foreground on some run folders.
 
-    This is the ``tensorboard-book view`` command. The temporary folder is
+    This is the `tensorboard-book view` command. The temporary folder is
     removed when TensorBoard exits.
 
     Args:
         paths: Run folders to show.
-        extra: TensorBoard arguments (e.g. ``--port 6007``).
+        extra: TensorBoard arguments (e.g. `--port 6007`).
 
     Returns:
         TensorBoard's exit code (0 after Ctrl+C).
@@ -173,6 +174,7 @@ class Instance:
     def url(self) -> str:
         """The address to open in a browser."""
         host = self.host
+
         if host in (LOCAL_HOST, "localhost", "::1"):
             host = "localhost"
         elif host in ("0.0.0.0", "::"):
@@ -226,13 +228,14 @@ def start(
         The instance. It may need a few seconds before :meth:`ready`.
 
     Raises:
-        RuntimeError: If ``limit`` instances are already running.
+        RuntimeError: If `limit` instances are already running.
     """
     names = sorted(runs)
     with _LOCK:
         for inst in _prune():
             if inst.runs == names:
                 return inst
+
         if len(_INSTANCES) >= limit:
             raise RuntimeError(
                 f"{limit} TensorBoards are already running. Stop one first."
@@ -270,9 +273,11 @@ def wait_ready(inst: Instance, timeout: float = 30.0) -> bool:
         True once it accepts connections.
     """
     deadline = time.time() + timeout
+
     while time.time() < deadline:
         if inst.ready():
             return True
+
         if not inst.alive:
             return False
         time.sleep(0.3)
@@ -302,6 +307,7 @@ def stop(inst_id: int) -> None:
     """
     with _LOCK:
         inst = _INSTANCES.pop(inst_id, None)
+
     if inst is None:
         return
     inst.process.terminate()

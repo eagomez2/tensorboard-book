@@ -7,15 +7,44 @@
 
 ## Install
 
-Install the `tensorboard-book` command from a copy of the repository:
+### With pip
+
+Install `tensorboard-book` from PyPI into a virtual environment:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # on Windows: .venv\Scripts\activate
+pip install tensorboard-book
+```
+
+The `tensorboard-book` command is available while the environment is
+active. To upgrade to a newer version, run
+`pip install --upgrade tensorboard-book`.
+
+To install the latest code from GitHub instead of the PyPI release:
+
+```bash
+pip install git+https://github.com/eagomez2/tensorboard-book
+```
+
+### With uv
+
+`uv tool install` puts the command in an environment of its own, so it is
+available everywhere without activating anything:
+
+```bash
+uv tool install tensorboard-book
+```
+
+### From a copy of the repository
 
 ```bash
 git clone https://github.com/eagomez2/tensorboard-book
 cd tensorboard-book
-uv tool install .       # or: pip install .
+pip install .            # or: uv tool install .
 ```
 
-Check the installation:
+### Check the installation
 
 ```bash
 tensorboard-book --version

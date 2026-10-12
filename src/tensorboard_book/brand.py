@@ -3,12 +3,12 @@
 A 3 x 3 matrix with two slices behind it stands for a tensor. The logo
 is the browser tab icon, the sidebar logo and the README logo: a filled
 blue circle with a white drawing.
-``logo.svg`` is for light backgrounds and ``logo-dark.svg``, a lighter
-blue, for dark ones. ``logo.png`` is drawn from the same shapes with
+`logo.svg` is for light backgrounds and `logo-dark.svg`, a lighter
+blue, for dark ones. `logo.png` is drawn from the same shapes with
 Pillow, so nothing has to be downloaded.
 
-Run ``python -m tensorboard_book.brand`` after changing the drawing; it
-also copies the SVGs to the top-level ``assets`` folder for the README.
+Run `python -m tensorboard_book.brand` after changing the drawing; it
+also copies the SVGs to the top-level `assets` folder for the README.
 """
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ def logo_svg(ink: str = BLUE, paper: str = WHITE, size: int = 64) -> str:
 
 
 def _mix(color: str, over: str, opacity: float) -> tuple[int, int, int]:
-    """Blend ``color`` at ``opacity`` over ``over``, as an RGB tuple."""
+    """Blend `color` at `opacity` over `over`, as an RGB tuple."""
     a = [int(color[i : i + 2], 16) for i in (1, 3, 5)]
     b = [int(over[i : i + 2], 16) for i in (1, 3, 5)]
     r, g, bl = (round(x * opacity + y * (1 - opacity)) for x, y in zip(a, b))
@@ -92,12 +92,13 @@ def _mix(color: str, over: str, opacity: float) -> tuple[int, int, int]:
 
 
 def write_assets() -> None:
-    """Write both SVG logos and ``logo.png``, and copy the SVGs."""
+    """Write both SVG logos and `logo.png`, and copy the SVGs."""
     from PIL import Image, ImageDraw
 
     ASSETS.mkdir(exist_ok=True)
     LOGO_SVG.write_text(logo_svg() + "\n", encoding="utf-8")
     LOGO_DARK_SVG.write_text(logo_svg(ink=DARK_BLUE) + "\n", encoding="utf-8")
+
     if README_ASSETS.is_dir():
         for path in (LOGO_SVG, LOGO_DARK_SVG):
             shutil.copy(path, README_ASSETS / path.name)

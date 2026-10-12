@@ -17,7 +17,7 @@
 
 A web application for organizing and comparing the runs in a TensorBoard
 log folder. `tensorboard-book` indexes every run, reports the best value of
-each metric, and stores tags, notes, collections and fields alongside the
+each scalar, and stores tags, notes, collections and fields alongside the
 runs. It can compare runs at their best step, overlay curves, show when runs
 were active, browse run files, and open any selection of runs in
 TensorBoard.

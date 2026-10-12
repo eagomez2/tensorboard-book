@@ -1,17 +1,17 @@
-# Metrics and settings
+# Scalars and settings
 
-Both are in **Fields and settings**, in the **Metrics** and **Settings**
+Both are in **Fields and settings**, in the **Scalars** and **Settings**
 tabs.
 
-## Metrics
+## Scalars
 
-Each logged metric has:
+Each logged scalar has:
 
 - a **group**: the tag up to the last `/` (`val` for `val/acc`), unless you
   change it.
 - a **direction**: whether higher or lower is better. Names containing
   `loss`, `error`, `mse`, `mae`, `wer`, `fid` and similar words default to
-  lower is better, and everything else to higher is better. Each metric is
+  lower is better, and everything else to higher is better. Each scalar is
   *auto* (follows that guess) until you pick *higher* or *lower*. **Reset
   all to auto** forgets every direction you set. Arrows (↑/↓) in column
   headers show the current choice.
@@ -28,6 +28,7 @@ Each logged metric has:
 | Max zip download | 1024 MB | |
 | Max TensorBoards at once | 5 | Each instance is a separate process. |
 | Extra TensorBoard arguments | (empty) | Added to every launch, e.g. `--samples_per_plugin images=100`. |
+| Config file names | `config.*, hparams.*, args.*, params.*, cfg.*, opts.*` | Patterns of the `.yaml`, `.yml`, `.json` or `.toml` files read as hyperparameters. See [Config files](../runs.md#config-files). |
 
 The **Auto** toggle in the sidebar rescans every 60 seconds and refreshes the
 page when something changed.

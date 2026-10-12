@@ -71,7 +71,8 @@ def test_options_rename_merge_delete(tmp_path):
     conn = db.connect(tmp_path / "o.db")
     for fp in "abc":
         conn.execute(
-            "INSERT INTO runs(fingerprint, path) VALUES (?, ?)", (fp, fp)
+            "INSERT INTO runs(fingerprint, path) VALUES (?, ?)",
+            (fp, fp),
         )
     db.create_field(conn, Field("data", type="choice"))
     db.set_field(conn, [1], "data", "imnet")

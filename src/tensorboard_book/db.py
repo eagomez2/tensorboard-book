@@ -2,7 +2,7 @@
 
 There are two kinds of data in the database:
 
-* Derived data (``runs`` scan fields, ``metrics``, ``series``) that the scanner
+* Derived data (`runs` scan fields, `metrics`, `series`) that the scanner
   can always rebuild from the event files.
 * Annotations (tags, notes, stars, archive flags, collections, fields,
   metric directions and display, settings) that exist only here. Every
@@ -10,7 +10,7 @@ There are two kinds of data in the database:
   them.
 
 The database runs in WAL mode so several browser sessions and a CLI scan can
-use it at the same time. Both files live in a hidden ``.tensorboard-book``
+use it at the same time. Both files live in a hidden `.tensorboard-book`
 folder inside the runs folder (see :func:`storage_dir`), so they move with
 the runs but stay out of the way.
 """
@@ -61,15 +61,25 @@ DEFAULT_SETTINGS = {
     "default_metrics": [],
     "tensorboard_args": "",
     "max_tensorboards": 5,
+    # Names of the files whose values become hyperparameters; the first
+    # pattern a run matches gives its main config file.
+    "config_patterns": [
+        "config.*",
+        "hparams.*",
+        "args.*",
+        "params.*",
+        "cfg.*",
+        "opts.*",
+    ],
 }
 
 
 def storage_dir(root: Path) -> Path:
     """Return the folder for the database and annotations, creating it.
 
-    It is ``ROOT/.tensorboard-book``, so it is copied along when the runs
+    It is `ROOT/.tensorboard-book`, so it is copied along when the runs
     folder is moved. When the runs folder is read-only, a per-folder
-    directory in ``~/.cache/tensorboard-book`` is used instead. Files left
+    directory in `~/.cache/tensorboard-book` is used instead. Files left
     in the runs folder by older versions are moved in on first use.
 
     Args:
@@ -79,6 +89,7 @@ def storage_dir(root: Path) -> Path:
         The storage folder.
     """
     root = Path(root).resolve()
+
     if os.access(root, os.W_OK):
         folder = root / DATA_DIR
     else:
@@ -90,6 +101,7 @@ def storage_dir(root: Path) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     for old, new in LEGACY_FILES.items():
         source, target = root / old, folder / new
+
         if source.is_file() and not target.exists():
             try:
                 source.rename(target)
@@ -105,7 +117,7 @@ def default_path(root: Path) -> Path:
         root: Runs folder.
 
     Returns:
-        ``ROOT/.tensorboard-book/index.db`` (see :func:`storage_dir`).
+        `ROOT/.tensorboard-book/index.db` (see :func:`storage_dir`).
     """
     return storage_dir(root) / DB_NAME
 
@@ -117,7 +129,7 @@ def annotations_file(db_path: Path) -> Path:
         db_path: Database file.
 
     Returns:
-        ``annotations.json`` next to the database.
+        `annotations.json` next to the database.
     """
     return Path(db_path).parent / ANNOTATIONS_NAME
 
@@ -238,7 +250,7 @@ def connect(db_path: str | Path) -> sqlite3.Connection:
         db_path: Path of the SQLite file.
 
     Returns:
-        A connection with ``sqlite3.Row`` rows, WAL mode and foreign keys on.
+        A connection with `sqlite3.Row` rows, WAL mode and foreign keys on.
     """
     conn = sqlite3.connect(str(db_path), timeout=30)
     conn.row_factory = sqlite3.Row
@@ -258,25 +270,29 @@ def connect(db_path: str | Path) -> sqlite3.Connection:
 def upgrade(conn: sqlite3.Connection) -> None:
     """Bring a database from an older version up to date (no commit).
 
-    Version 1 had properties with a ``kind`` of ``number`` or
-    ``category``. They become fields: a category becomes a choice field
+    Version 1 had properties with a `kind` of `number` or
+    `category`. They become fields: a category becomes a choice field
     whose options are its values in alphabetical order, so pill colors
     start out the same. The annotations file is written first, so the
-    previous state can be restored with ``import-annotations``.
+    previous state can be restored with `import-annotations`.
 
     Args:
         conn: Open connection.
     """
     columns = {r[1] for r in conn.execute("PRAGMA table_info(properties)")}
+
     if "kind" not in columns:
         return
     path = get_meta(conn, "annotations_path")
+
     if not path:
         # The annotations file is kept next to the database by default.
         db_file = conn.execute("PRAGMA database_list").fetchone()[2]
         path = db_file and str(Path(db_file).with_name("annotations.json"))
+
     if path and Path(path).exists():
         backup = Path(path).with_name("annotations-v1.json")
+
         if not backup.exists():
             backup.write_text(Path(path).read_text())
     rows = conn.execute("SELECT * FROM properties ORDER BY name").fetchall()
@@ -294,6 +310,7 @@ def upgrade(conn: sqlite3.Connection) -> None:
         for position, row in enumerate(rows):
             kind = "choice" if row["kind"] == "category" else "number"
             options = []
+
             if kind == "choice":
                 options = sorted(
                     {
@@ -328,7 +345,7 @@ def upgrade(conn: sqlite3.Connection) -> None:
 
 
 def get_meta(conn: sqlite3.Connection, key: str, default: str | None = None):
-    """Read one value from the ``meta`` table.
+    """Read one value from the `meta` table.
 
     Args:
         conn: Open connection.
@@ -336,16 +353,17 @@ def get_meta(conn: sqlite3.Connection, key: str, default: str | None = None):
         default: Value returned when the key is absent.
 
     Returns:
-        The stored string, or ``default``.
+        The stored string, or `default`.
     """
     row = conn.execute(
-        "SELECT value FROM meta WHERE key = ?", (key,)
+        "SELECT value FROM meta WHERE key = ?",
+        (key,),
     ).fetchone()
     return row["value"] if row else default
 
 
 def set_meta(conn: sqlite3.Connection, key: str, value: str) -> None:
-    """Write one value to the ``meta`` table (no commit).
+    """Write one value to the `meta` table (no commit).
 
     Args:
         conn: Open connection.
@@ -387,7 +405,7 @@ def get_settings(conn: sqlite3.Connection) -> dict:
         conn: Open connection.
 
     Returns:
-        Settings dictionary with every key from ``DEFAULT_SETTINGS``.
+        Settings dictionary with every key from `DEFAULT_SETTINGS`.
     """
     stored = json.loads(get_meta(conn, "settings", "{}"))
     return {**DEFAULT_SETTINGS, **stored}
@@ -414,6 +432,7 @@ def commit_edit(conn: sqlite3.Connection) -> None:
     bump_version(conn)
     conn.commit()
     path = get_meta(conn, "annotations_path")
+
     if path:
         try:
             export_annotations(conn, path)
@@ -422,7 +441,9 @@ def commit_edit(conn: sqlite3.Connection) -> None:
 
 
 def encode_series(
-    steps: np.ndarray, walls: np.ndarray, values: np.ndarray
+    steps: np.ndarray,
+    walls: np.ndarray,
+    values: np.ndarray,
 ) -> bytes:
     """Pack a scalar series into a compressed blob.
 
@@ -432,7 +453,7 @@ def encode_series(
         values: Scalar values.
 
     Returns:
-        zlib-compressed float64 array of shape ``(3, n)``.
+        zlib-compressed float64 array of shape `(3, n)`.
     """
     stacked = np.vstack([steps, walls, values]).astype(np.float64)
     return zlib.compress(stacked.tobytes(), 6)
@@ -486,7 +507,10 @@ DETAIL_COLUMNS = {
 
 
 def query(
-    conn: sqlite3.Connection, table: str, schema: dict, where: str = ""
+    conn: sqlite3.Connection,
+    table: str,
+    schema: dict,
+    where: str = "",
 ) -> pl.DataFrame:
     """Read columns of a table into a polars DataFrame with a fixed schema.
 
@@ -497,7 +521,7 @@ def query(
         conn: Open connection.
         table: Table name.
         schema: Mapping of column name to polars type, in output order.
-        where: Optional SQL after ``FROM table`` (e.g. ``ORDER BY name``).
+        where: Optional SQL after `FROM table` (e.g. `ORDER BY name`).
 
     Returns:
         The rows as a DataFrame.
@@ -508,7 +532,9 @@ def query(
 
 
 def load_series(
-    conn: sqlite3.Connection, run_id: int, tag: str
+    conn: sqlite3.Connection,
+    run_id: int,
+    tag: str,
 ) -> pl.DataFrame:
     """Load one stored scalar series.
 
@@ -518,12 +544,14 @@ def load_series(
         tag: Scalar tag.
 
     Returns:
-        DataFrame with ``step``, ``wall_time`` and ``value`` columns (empty
+        DataFrame with `step`, `wall_time` and `value` columns (empty
         if the run did not log that tag).
     """
     row = conn.execute(
-        "SELECT data FROM series WHERE run_id = ? AND tag = ?", (run_id, tag)
+        "SELECT data FROM series WHERE run_id = ? AND tag = ?",
+        (run_id, tag),
     ).fetchone()
+
     if row is None:
         arr = np.empty((3, 0))
     else:
@@ -539,8 +567,8 @@ def load_runs(conn: sqlite3.Connection) -> pl.DataFrame:
         conn: Open connection.
 
     Returns:
-        DataFrame with the columns of ``RUN_COLUMNS``, plus ``name`` and
-        the sorted list columns ``tags`` and ``groups``. The JSON fields
+        DataFrame with the columns of `RUN_COLUMNS`, plus `name` and
+        the sorted list columns `tags` and `groups`. The JSON fields
         are loaded separately by :func:`load_run_details`.
     """
     runs = query(conn, "runs", RUN_COLUMNS, "ORDER BY id")
@@ -558,7 +586,9 @@ def load_runs(conn: sqlite3.Connection) -> pl.DataFrame:
         pl.col("path").alias("name"),
         pl.Series("tags", [tags.get(i, []) for i in ids], pl.List(pl.String)),
         pl.Series(
-            "groups", [groups.get(i, []) for i in ids], pl.List(pl.String)
+            "groups",
+            [groups.get(i, []) for i in ids],
+            pl.List(pl.String),
         ),
     )
 
@@ -570,8 +600,8 @@ def load_run_details(conn: sqlite3.Connection) -> dict[int, dict]:
         conn: Open connection.
 
     Returns:
-        Mapping of run id to a dict with ``hparams``, ``hparam_sources``,
-        ``texts``, ``other_tags`` and ``segments``.
+        Mapping of run id to a dict with `hparams`, `hparam_sources`,
+        `texts`, `other_tags` and `segments`.
     """
     sql = f"SELECT id, {', '.join(DETAIL_COLUMNS)} FROM runs"
     return {
@@ -602,9 +632,9 @@ def load_groups(conn: sqlite3.Connection) -> list[dict]:
         conn: Open connection.
 
     Returns:
-        One dict per group, sorted by name, with ``id``, ``name``,
-        ``description``, ``selection_metric``, ``columns`` (a list) and
-        ``members`` (a list of run ids).
+        One dict per group, sorted by name, with `id`, `name`,
+        `description`, `selection_metric`, `columns` (a list) and
+        `members` (a list of run ids).
     """
     members: dict[int, list[int]] = {}
     for r in conn.execute("SELECT group_id, run_id FROM group_members"):
@@ -629,7 +659,7 @@ def load_directions(conn: sqlite3.Connection) -> dict[str, str]:
         conn: Open connection.
 
     Returns:
-        Mapping of tag to ``"max"`` or ``"min"``.
+        Mapping of tag to `"max"` or `"min"`.
     """
     rows = conn.execute(
         "SELECT tag, direction FROM metric_directions"
@@ -638,18 +668,21 @@ def load_directions(conn: sqlite3.Connection) -> dict[str, str]:
 
 
 def set_run_flag(
-    conn: sqlite3.Connection, run_ids: list[int], field: str, value
+    conn: sqlite3.Connection,
+    run_ids: list[int],
+    field: str,
+    value,
 ) -> None:
-    """Set ``starred``, ``archived`` or ``notes`` on some runs.
+    """Set `starred`, `archived` or `notes` on some runs.
 
     Args:
         conn: Open connection.
         run_ids: Runs to update.
-        field: One of ``starred``, ``archived``, ``notes``.
+        field: One of `starred`, `archived`, `notes`.
         value: New value.
 
     Raises:
-        ValueError: If ``field`` is not editable.
+        ValueError: If `field` is not editable.
     """
     if field not in ("starred", "archived", "notes"):
         raise ValueError(f"Field {field!r} is not editable")
@@ -661,7 +694,9 @@ def set_run_flag(
 
 
 def add_tags(
-    conn: sqlite3.Connection, run_ids: list[int], tags: list[str]
+    conn: sqlite3.Connection,
+    run_ids: list[int],
+    tags: list[str],
 ) -> None:
     """Attach tags to runs.
 
@@ -679,7 +714,9 @@ def add_tags(
 
 
 def remove_tags(
-    conn: sqlite3.Connection, run_ids: list[int], tags: list[str]
+    conn: sqlite3.Connection,
+    run_ids: list[int],
+    tags: list[str],
 ) -> None:
     """Detach tags from runs.
 
@@ -696,7 +733,9 @@ def remove_tags(
 
 
 def set_run_tags(
-    conn: sqlite3.Connection, run_id: int, tags: list[str]
+    conn: sqlite3.Connection,
+    run_id: int,
+    tags: list[str],
 ) -> None:
     """Replace all tags of one run.
 
@@ -710,7 +749,7 @@ def set_run_tags(
 
 
 def rename_tag(conn: sqlite3.Connection, old: str, new: str) -> None:
-    """Rename a tag everywhere, merging into ``new`` if it already exists.
+    """Rename a tag everywhere, merging into `new` if it already exists.
 
     Args:
         conn: Open connection.
@@ -738,7 +777,9 @@ def delete_tag(conn: sqlite3.Connection, tag: str) -> None:
 
 
 def create_group(
-    conn: sqlite3.Connection, name: str, description: str = ""
+    conn: sqlite3.Connection,
+    name: str,
+    description: str = "",
 ) -> int:
     """Create a group, or return the existing one with that name.
 
@@ -768,21 +809,24 @@ def update_group(conn: sqlite3.Connection, group_id: int, **fields) -> None:
     Args:
         conn: Open connection.
         group_id: Group to update.
-        **fields: Any of ``name``, ``description``, ``selection_metric``,
-            ``columns`` (a list, stored as JSON).
+        **fields: Any of `name`, `description`, `selection_metric`,
+            `columns` (a list, stored as JSON).
 
     Raises:
         ValueError: If an unknown field is given.
     """
     allowed = {"name", "description", "selection_metric", "columns"}
     unknown = set(fields) - allowed
+
     if unknown:
         raise ValueError(f"Unknown group fields: {sorted(unknown)}")
+
     if "columns" in fields:
         fields["columns"] = json.dumps(fields["columns"])
     for key, value in fields.items():
         conn.execute(
-            f"UPDATE groups SET {key} = ? WHERE id = ?", (value, group_id)
+            f"UPDATE groups SET {key} = ? WHERE id = ?",
+            (value, group_id),
         )
     commit_edit(conn)
 
@@ -799,7 +843,9 @@ def delete_group(conn: sqlite3.Connection, group_id: int) -> None:
 
 
 def add_to_group(
-    conn: sqlite3.Connection, group_id: int, run_ids: list[int]
+    conn: sqlite3.Connection,
+    group_id: int,
+    run_ids: list[int],
 ) -> None:
     """Add runs to a group.
 
@@ -816,7 +862,9 @@ def add_to_group(
 
 
 def remove_from_group(
-    conn: sqlite3.Connection, group_id: int, run_ids: list[int]
+    conn: sqlite3.Connection,
+    group_id: int,
+    run_ids: list[int],
 ) -> None:
     """Remove runs from a group.
 
@@ -833,7 +881,9 @@ def remove_from_group(
 
 
 def set_run_groups(
-    conn: sqlite3.Connection, run_id: int, group_ids: list[int]
+    conn: sqlite3.Connection,
+    run_id: int,
+    group_ids: list[int],
 ) -> None:
     """Replace the group memberships of one run.
 
@@ -851,13 +901,14 @@ def set_run_groups(
 
 
 def set_directions(
-    conn: sqlite3.Connection, directions: dict[str, str]
+    conn: sqlite3.Connection,
+    directions: dict[str, str],
 ) -> None:
     """Store "higher/lower is better" choices for metrics.
 
     Args:
         conn: Open connection.
-        directions: Mapping of tag to ``"max"`` or ``"min"``.
+        directions: Mapping of tag to `"max"` or `"min"`.
     """
     conn.executemany(
         "INSERT INTO metric_directions(tag, direction) VALUES (?, ?) "
@@ -868,7 +919,8 @@ def set_directions(
 
 
 def clear_directions(
-    conn: sqlite3.Connection, tags: list[str] | None = None
+    conn: sqlite3.Connection,
+    tags: list[str] | None = None,
 ) -> None:
     """Forget user-set directions, so those metrics use the guess again.
 
@@ -902,7 +954,7 @@ FIELD_COLUMNS = (
 
 
 def _field_from_row(row, runs: int = 0) -> Field:
-    """Build a :class:`Field` from a row of the ``properties`` table."""
+    """Build a :class:`Field` from a row of the `properties` table."""
     return Field(
         name=row["name"],
         group=row["grp"] or "",
@@ -923,26 +975,34 @@ def _check_field(fld: Field) -> None:
     """Raise ValueError if a field definition isn't valid."""
     if not fld.name:
         raise ValueError("Give the field a name.")
+
     if fld.name.casefold() == fields.TAGS.casefold():
         raise ValueError(f"{fields.TAGS} is the built-in tags field.")
+
     if fld.type not in fields.TYPES:
         raise ValueError(
             f"{fld.name}: the type must be one of {', '.join(fields.TYPES)}."
         )
+
     if fld.direction not in (None, *fields.DIRECTIONS):
         raise ValueError(f"{fld.name}: better when is higher or lower.")
+
     if fld.direction and not fld.is_number:
         raise ValueError(f"{fld.name}: only numbers can be higher or lower.")
+
     if fld.scale not in fields.SCALES:
         raise ValueError(f"{fld.name}: unknown scale {fld.scale!r}.")
+
     if fld.decimals is not None and not 0 <= fld.decimals <= 10:
         raise ValueError(f"{fld.name}: decimals go from 0 to 10.")
 
 
 def _write_field(
-    conn: sqlite3.Connection, fld: Field, old_name: str | None = None
+    conn: sqlite3.Connection,
+    fld: Field,
+    old_name: str | None = None,
 ) -> None:
-    """Insert a field, or update the one called ``old_name`` (no commit)."""
+    """Insert a field, or update the one called `old_name` (no commit)."""
     values = (
         fld.name,
         fld.group,
@@ -956,6 +1016,7 @@ def _write_field(
         int(fld.visible),
         fld.position,
     )
+
     if old_name is None:
         conn.execute(
             f"INSERT INTO properties({', '.join(FIELD_COLUMNS)}, created) "
@@ -983,6 +1044,7 @@ def create_field(conn: sqlite3.Connection, fld: Field) -> None:
     """
     fld = replace(fld, name=fld.name.strip(), group=fld.group.strip())
     _check_field(fld)
+
     if get_field(conn, fld.name) is not None:
         raise ValueError(f"A field named {fld.name!r} already exists.")
     _write_field(conn, fld)
@@ -1005,13 +1067,16 @@ def update_field(conn: sqlite3.Connection, name: str, fld: Field) -> None:
             or values don't convert to a new type.
     """
     old = get_field(conn, name)
+
     if old is None:
         raise ValueError(f"No field named {name!r}.")
     fld = replace(fld, name=fld.name.strip(), group=fld.group.strip())
     _check_field(fld)
+
     if fld.name != name and get_field(conn, fld.name) is not None:
         raise ValueError(f"A field named {fld.name!r} already exists.")
     converted = []
+
     if fld.type != old.type:
         problems = []
         for row in conn.execute(
@@ -1021,13 +1086,16 @@ def update_field(conn: sqlite3.Connection, name: str, fld: Field) -> None:
         ):
             try:
                 value = fields.convert(
-                    old, fld.type, fields.decode(old.type, row["value"])
+                    old,
+                    fld.type,
+                    fields.decode(old.type, row["value"]),
                 )
             except ValueError as exc:
                 problems.append(f"{row['path']}: {exc}")
                 continue
             converted.append((row["run_id"], value))
             fld = fields.with_options(fld, value)
+
         if problems:
             shown = "; ".join(problems[:5])
             more = (
@@ -1065,7 +1133,7 @@ def delete_field(conn: sqlite3.Connection, name: str) -> None:
 
 
 def get_field(conn: sqlite3.Connection, name: str) -> Field | None:
-    """Return one field, the built-in ``tags`` field included.
+    """Return one field, the built-in `tags` field included.
 
     Args:
         conn: Open connection.
@@ -1077,7 +1145,8 @@ def get_field(conn: sqlite3.Connection, name: str) -> Field | None:
     if name == fields.TAGS:
         return tags_field(conn)
     row = conn.execute(
-        "SELECT * FROM properties WHERE name = ?", (name,)
+        "SELECT * FROM properties WHERE name = ?",
+        (name,),
     ).fetchone()
     return None if row is None else _field_from_row(row)
 
@@ -1089,8 +1158,8 @@ def load_fields(conn: sqlite3.Connection) -> list[Field]:
         conn: Open connection.
 
     Returns:
-        Fields sorted by position, then group and name, each with ``runs``
-        (how many runs have a value). The built-in ``tags`` field is not
+        Fields sorted by position, then group and name, each with `runs`
+        (how many runs have a value). The built-in `tags` field is not
         included; see :func:`tags_field`.
     """
     counts = dict(
@@ -1105,9 +1174,9 @@ def load_fields(conn: sqlite3.Connection) -> list[Field]:
 
 
 def tags_field(conn: sqlite3.Connection) -> Field:
-    """Return the built-in ``tags`` field with its options in order.
+    """Return the built-in `tags` field with its options in order.
 
-    The order is kept in the ``tag_options`` meta value. Tags that are in
+    The order is kept in the `tag_options` meta value. Tags that are in
     use but not in it yet (from an older version or an import) follow in
     alphabetical order, so the colors start out as before.
 
@@ -1142,7 +1211,8 @@ def _save_tag_options(conn: sqlite3.Connection, options) -> None:
 
 
 def load_run_fields(
-    conn: sqlite3.Connection, defined: list[Field] | None = None
+    conn: sqlite3.Connection,
+    defined: list[Field] | None = None,
 ) -> dict[int, dict]:
     """Load every run's field values, decoded by type.
 
@@ -1151,20 +1221,24 @@ def load_run_fields(
         defined: The fields (loaded when not given).
 
     Returns:
-        Mapping of run id to ``{field name: value}``. Tags of the
-        built-in field are not included (they are in ``load_runs``).
+        Mapping of run id to `{field name: value}`. Tags of the
+        built-in field are not included (they are in `load_runs`).
     """
     kinds = {f.name: f.type for f in (defined or load_fields(conn))}
     values: dict[int, dict] = {}
     for r in conn.execute("SELECT run_id, name, value FROM run_properties"):
         value = fields.decode(kinds.get(r["name"], "text"), r["value"])
+
         if value is not None:
             values.setdefault(r["run_id"], {})[r["name"]] = value
     return values
 
 
 def set_field(
-    conn: sqlite3.Connection, run_ids: list[int], name: str, value
+    conn: sqlite3.Connection,
+    run_ids: list[int],
+    name: str,
+    value,
 ) -> None:
     """Set (or clear, with None or "") one field on some runs.
 
@@ -1173,24 +1247,28 @@ def set_field(
     Args:
         conn: Open connection.
         run_ids: Runs to change.
-        name: Field name (``tags`` replaces the runs' tags).
+        name: Field name (`tags` replaces the runs' tags).
         value: The value, in any form :func:`fields.coerce` reads.
 
     Raises:
         ValueError: If the field doesn't exist or the value doesn't fit.
     """
     fld = get_field(conn, name)
+
     if fld is None:
         raise ValueError(f"No field named {name!r}.")
     value = fields.coerce(fld, value)
+
     if fld.builtin:
         for run_id in run_ids:
             conn.execute("DELETE FROM run_tags WHERE run_id = ?", (run_id,))
         add_tags(conn, run_ids, value or [])
         return
     grown = fields.with_options(fld, value)
+
     if grown is not fld:
         _write_field(conn, grown, old_name=name)
+
     if value is None:
         conn.executemany(
             "DELETE FROM run_properties WHERE run_id = ? AND name = ?",
@@ -1217,6 +1295,7 @@ def option_counts(conn: sqlite3.Connection, name: str) -> dict[str, int]:
     """
     fld = get_field(conn, name)
     counts = dict.fromkeys(fld.options, 0)
+
     if fld.builtin:
         for tag, n in conn.execute(
             "SELECT tag, COUNT(*) FROM run_tags GROUP BY tag"
@@ -1224,7 +1303,8 @@ def option_counts(conn: sqlite3.Connection, name: str) -> dict[str, int]:
             counts[tag] = n
         return counts
     for (stored,) in conn.execute(
-        "SELECT value FROM run_properties WHERE name = ?", (name,)
+        "SELECT value FROM run_properties WHERE name = ?",
+        (name,),
     ):
         value = fields.decode(fld.type, stored)
         for item in value if isinstance(value, list) else [value]:
@@ -1247,7 +1327,7 @@ def save_options(
 
     Args:
         conn: Open connection.
-        name: A choice or tags field, ``tags`` included.
+        name: A choice or tags field, `tags` included.
         options: The options in their new order, under their new names.
         renames: Old name to new name.
         deletes: Options to remove from every run.
@@ -1256,11 +1336,13 @@ def save_options(
         ValueError: If the field has no options.
     """
     fld = get_field(conn, name)
+
     if fld is None or not fld.has_options:
         raise ValueError(f"{name!r} has no options.")
     renames = {o: n.strip() for o, n in (renames or {}).items() if n.strip()}
     deletes = set(deletes or [])
     options = list(dict.fromkeys(o.strip() for o in options if o.strip()))
+
     if fld.builtin:
         for old, new in renames.items():
             if old != new:
@@ -1271,19 +1353,22 @@ def save_options(
                 )
                 conn.execute("DELETE FROM run_tags WHERE tag = ?", (old,))
         conn.executemany(
-            "DELETE FROM run_tags WHERE tag = ?", [(t,) for t in deletes]
+            "DELETE FROM run_tags WHERE tag = ?",
+            [(t,) for t in deletes],
         )
         _save_tag_options(conn, [o for o in options if o not in deletes])
         commit_edit(conn)
         return
     rows = conn.execute(
-        "SELECT run_id, value FROM run_properties WHERE name = ?", (name,)
+        "SELECT run_id, value FROM run_properties WHERE name = ?",
+        (name,),
     ).fetchall()
     for row in rows:
         value = fields.decode(fld.type, row["value"])
         items = value if isinstance(value, list) else [value]
         items = [renames.get(i, i) for i in items if i not in deletes]
         items = list(dict.fromkeys(items))
+
         if not items:
             conn.execute(
                 "DELETE FROM run_properties WHERE run_id = ? AND name = ?",
@@ -1308,8 +1393,8 @@ def load_metric_display(conn: sqlite3.Connection) -> dict[str, dict]:
         conn: Open connection.
 
     Returns:
-        Mapping of tag to ``{"group", "unit", "scale", "decimals"}`` for
-        metrics with settings. ``group`` is None when it follows the tag.
+        Mapping of tag to `{"group", "unit", "scale", "decimals"}` for
+        metrics with settings. `group` is None when it follows the tag.
     """
     return {
         r["tag"]: {
@@ -1323,14 +1408,15 @@ def load_metric_display(conn: sqlite3.Connection) -> dict[str, dict]:
 
 
 def set_metric_display(
-    conn: sqlite3.Connection, display: dict[str, dict]
+    conn: sqlite3.Connection,
+    display: dict[str, dict],
 ) -> None:
     """Store how metrics are shown; metrics with no settings are removed.
 
     Args:
         conn: Open connection.
-        display: Mapping of tag to ``{"group", "unit", "scale",
-            "decimals"}``.
+        display: Mapping of tag to `{"group", "unit", "scale",
+            "decimals"}`.
 
     Raises:
         ValueError: For an unknown scale or decimals out of 0 to 10.
@@ -1339,10 +1425,13 @@ def set_metric_display(
         group = d.get("group")
         unit, scale = d.get("unit") or "", d.get("scale") or ""
         decimals = d.get("decimals")
+
         if scale not in fields.SCALES:
             raise ValueError(f"{tag}: unknown scale {scale!r}.")
+
         if decimals is not None and not 0 <= decimals <= 10:
             raise ValueError(f"{tag}: decimals go from 0 to 10.")
+
         if group is None and not unit and not scale and decimals is None:
             conn.execute("DELETE FROM metric_display WHERE tag = ?", (tag,))
             continue
@@ -1379,9 +1468,9 @@ def field_dict(fld: Field) -> dict:
         fld: The field.
 
     Returns:
-        A dict with ``name``, ``group``, ``type``, ``description``,
-        ``unit``, ``scale``, ``decimals``, ``direction``, ``options``,
-        ``visible`` and ``position``.
+        A dict with `name`, `group`, `type`, `description`,
+        `unit`, `scale`, `decimals`, `direction`, `options`,
+        `visible` and `position`.
     """
     return {
         "name": fld.name,
@@ -1401,8 +1490,8 @@ def field_dict(fld: Field) -> dict:
 def field_from_dict(data: dict) -> Field:
     """Read a field from :func:`field_dict` or a version 1 property.
 
-    Version 1 files describe properties as ``{"name", "kind",
-    "description"}``, where ``kind`` is ``number`` or ``category``; a
+    Version 1 files describe properties as `{"name", "kind",
+    "description"}`, where `kind` is `number` or `category`; a
     category becomes a choice field.
 
     Args:
@@ -1412,6 +1501,7 @@ def field_from_dict(data: dict) -> Field:
         The field.
     """
     kind = data.get("type") or data.get("kind") or "text"
+
     if kind == "category":
         kind = "choice"
     decimals = data.get("decimals")
@@ -1437,8 +1527,8 @@ def export_fields(conn: sqlite3.Connection) -> dict:
         conn: Open connection.
 
     Returns:
-        ``{"format": "tensorboard-book-fields", "version": 1, "fields":
-        [...], "tag_options": [...]}``. Values are not included.
+        `{"format": "tensorboard-book-fields", "version": 1, "fields":
+        [...], "tag_options": [...]}`. Values are not included.
     """
     return {
         "format": FIELDS_FORMAT,
@@ -1450,7 +1540,9 @@ def export_fields(conn: sqlite3.Connection) -> dict:
 
 
 def import_fields(
-    conn: sqlite3.Connection, data: dict, update_existing: bool = False
+    conn: sqlite3.Connection,
+    data: dict,
+    update_existing: bool = False,
 ) -> dict:
     """Add the fields of an exported file; values are never touched.
 
@@ -1464,22 +1556,26 @@ def import_fields(
             the file, instead of keeping them as they are.
 
     Returns:
-        The names ``added``, ``updated`` and ``kept``.
+        The names `added`, `updated` and `kept`.
 
     Raises:
         ValueError: If the file has no fields, or a field isn't valid.
     """
     items = data.get("fields")
+
     if items is None:
         items = data.get("properties")
+
     if not isinstance(items, list):
         raise ValueError("This file has no fields.")
     result = {"added": [], "updated": [], "kept": []}
     for item in items:
         fld = field_from_dict(item)
+
         if fld.name == fields.TAGS:
             continue
         old = get_field(conn, fld.name)
+
         if old is None:
             create_field(conn, fld)
             result["added"].append(fld.name)
@@ -1488,6 +1584,7 @@ def import_fields(
             result["updated"].append(fld.name)
         else:
             result["kept"].append(fld.name)
+
     if data.get("tag_options"):
         current = tags_field(conn).options
         _save_tag_options(
@@ -1501,7 +1598,8 @@ def import_fields(
 
 
 def export_annotations(
-    conn: sqlite3.Connection, path: str | Path | None = None
+    conn: sqlite3.Connection,
+    path: str | Path | None = None,
 ):
     """Serialize every annotation to JSON.
 
@@ -1571,6 +1669,7 @@ def export_annotations(
             or r["fields"]
         ],
     }
+
     if path is not None:
         path = Path(path)
         tmp = path.with_name(path.name + ".tmp")
@@ -1584,7 +1683,7 @@ def import_annotations(conn: sqlite3.Connection, data: dict) -> dict:
 
     Runs are matched by fingerprint first, then by path. Runs that are not in
     the database yet are skipped, so scan before importing. Version 1 files
-    (properties with a ``kind``) are read too.
+    (properties with a `kind`) are read too.
 
     Args:
         conn: Open connection.
@@ -1599,6 +1698,7 @@ def import_annotations(conn: sqlite3.Connection, data: dict) -> dict:
     """
     if data.get("format") != ANNOTATIONS_FORMAT:
         raise ValueError("Not a tensorboard-book annotations file")
+
     if int(data.get("version", 1)) > ANNOTATIONS_VERSION:
         raise ValueError(
             "This annotations file is from a newer tensorboard-book. "
@@ -1611,25 +1711,32 @@ def import_annotations(conn: sqlite3.Connection, data: dict) -> dict:
     for item in data.get("fields", data.get("properties", [])):
         fld = field_from_dict(item)
         old = get_field(conn, fld.name)
+
         if fld.name == fields.TAGS:
             continue
+
         if old is None:
             _check_field(fld)
             _write_field(conn, fld)
         else:
             merged = fields.with_options(
-                replace(fld, options=old.options), list(fld.options)
+                replace(fld, options=old.options),
+                list(fld.options),
             )
+
             if fld.type == old.type:
                 _write_field(conn, merged, old_name=fld.name)
+
     if data.get("tag_options"):
         _save_tag_options(
-            conn, [*tags_field(conn).options, *data["tag_options"]]
+            conn,
+            [*tags_field(conn).options, *data["tag_options"]],
         )
     defined = {f.name: f for f in load_fields(conn)}
     matched = skipped = 0
     for run in data.get("runs", []):
         run_id = by_fp.get(run["fingerprint"]) or by_path.get(run["path"])
+
         if run_id is None:
             skipped += 1
             continue
@@ -1648,12 +1755,15 @@ def import_annotations(conn: sqlite3.Connection, data: dict) -> dict:
         values = run.get("fields", run.get("properties", {}))
         for name, value in values.items():
             fld = defined.get(name)
+
             if fld is None:
                 continue
             value = fields.coerce(fld, value)
+
             if value is None:
                 continue
             grown = fields.with_options(fld, value)
+
             if grown is not fld:
                 _write_field(conn, grown, old_name=name)
                 defined[name] = grown
@@ -1680,7 +1790,8 @@ def import_annotations(conn: sqlite3.Connection, data: dict) -> dict:
             ),
         )
         gid = conn.execute(
-            "SELECT id FROM groups WHERE name = ?", (g["name"],)
+            "SELECT id FROM groups WHERE name = ?",
+            (g["name"],),
         )
         gid = gid.fetchone()["id"]
         conn.executemany(
@@ -1709,6 +1820,7 @@ def import_annotations(conn: sqlite3.Connection, data: dict) -> dict:
                 d.get("decimals"),
             ),
         )
+
     if data.get("settings"):
         merged = {**get_settings(conn), **data["settings"]}
         set_meta(conn, "settings", json.dumps(merged))
@@ -1720,7 +1832,7 @@ def now_iso() -> str:
     """Return the current UTC time as ISO 8601 text.
 
     Returns:
-        For example ``2026-10-09T12:00:00+00:00``.
+        For example `2026-10-09T12:00:00+00:00`.
     """
     return datetime.datetime.now(datetime.timezone.utc).isoformat(
         timespec="seconds"

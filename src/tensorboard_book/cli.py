@@ -1,4 +1,4 @@
-"""Command line entry point: ``tensorboard-book``.
+"""Command line entry point: `tensorboard-book`.
 
 Usage::
 
@@ -11,7 +11,7 @@ Usage::
     tensorboard-book import-annotations ROOT FILE [--db PATH]
     tensorboard-book view --logdir RUN [RUN ...] [TensorBoard options]
 
-Without a subcommand, ``tensorboard-book ROOT`` scans the folder and starts the
+Without a subcommand, `tensorboard-book ROOT` scans the folder and starts the
 web app for it.
 """
 
@@ -46,7 +46,7 @@ FIRST_YEAR = 2026
 # Warm light and dark themes with one teal accent.
 # Users switch between them in the app menu (Settings > Theme); by default
 # the app follows the system setting. Fonts ship inside the package, in
-# ``static/fonts``. Options the installed Streamlit does not know are
+# `static/fonts`. Options the installed Streamlit does not know are
 # skipped.
 SHARED_THEME = {
     "theme.font": "IBM Plex Sans, sans-serif",
@@ -97,7 +97,7 @@ def heading(text: str) -> None:
 
 
 def field(label: str, value: str) -> None:
-    """Print ``label: value`` with a blue label and a bold value."""
+    """Print `label: value` with a blue label and a bold value."""
     click.echo(
         "  "
         + click.style(f"{label}:", fg="blue")
@@ -141,13 +141,13 @@ def print_progress(done: int, total: int, path: str) -> None:
 
 
 def copyright_years(today: datetime.date | None = None) -> str:
-    """Return the years of the project, for ``--version`` and the docs.
+    """Return the years of the project, for `--version` and the docs.
 
     Args:
         today: The date to take the current year from (defaults to today).
 
     Returns:
-        For example ``2026 - 2027``, or a single year while it is still the
+        For example `2026 - 2027`, or a single year while it is still the
         first one.
     """
     year = (today or datetime.date.today()).year
@@ -155,13 +155,13 @@ def copyright_years(today: datetime.date | None = None) -> str:
 
 
 def version_text(today: datetime.date | None = None) -> str:
-    """Return what ``--version`` prints.
+    """Return what `--version` prints.
 
     Args:
         today: The date to take the current year from (defaults to today).
 
     Returns:
-        For example ``tensorboard-book version 0.7.0 2026 - 2027``.
+        For example `tensorboard-book version 0.7.0 2026 - 2027`.
     """
     return f"tensorboard-book version {__version__} {copyright_years(today)}"
 
@@ -176,11 +176,13 @@ def cmd_serve(args: argparse.Namespace) -> int:
         The Streamlit process exit code.
     """
     root = Path(args.root).resolve()
+
     if not root.is_dir():
         error(f"{root} is not a folder.")
         return 2
     env = dict(os.environ)
     local = args.host in LOCAL_HOSTS
+
     if args.no_auth and not local:
         error(
             "--no-auth only works with a local --host (127.0.0.1).",
@@ -188,12 +190,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
         )
         return 2
     stored = env.get(auth.EDITOR_ENV, "")
+
     if args.no_auth or (local and not stored):
         # Only this computer can reach a local host, so the password is
         # optional there: it is asked for only once the hash is set.
         env[auth.NO_AUTH_ENV] = "1"
     else:
         env.pop(auth.NO_AUTH_ENV, None)
+
         if not stored:
             error(
                 f"--host {args.host} opens the app to other computers, so "
@@ -209,6 +213,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
                     "Create it again with:  tensorboard-book hash-password",
                 )
                 return 2
+
     if args.port is not None and not port_is_free(args.host, args.port):
         # Streamlit would stop too, but only after the scan.
         error(
@@ -225,8 +230,13 @@ def cmd_serve(args: argparse.Namespace) -> int:
     conn = db.connect(db_path)
     was_empty = conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0] == 0
     counts = scanner.scan(
-        conn, root, args.depth, args.workers, progress=print_progress
+        conn,
+        root,
+        args.depth,
+        args.workers,
+        progress=print_progress,
     )
+
     if counts["parsed"]:
         click.echo("\r" + " " * 90 + "\r", nl=False)  # Clear the progress.
     field(
@@ -236,11 +246,13 @@ def cmd_serve(args: argparse.Namespace) -> int:
     annotations = db.annotations_file(db_path)
     db.set_meta(conn, "annotations_path", str(annotations))
     conn.commit()
+
     if was_empty and annotations.exists():
         # A fresh database: restore tags, notes and groups from the backup.
         try:
             result = db.import_annotations(
-                conn, json.loads(annotations.read_text())
+                conn,
+                json.loads(annotations.read_text()),
             )
             field(
                 "Annotations",
@@ -271,7 +283,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         "none",
         "--server.runOnSave",
         "false",
-        # Serves only the bundled fonts in ``static/``.
+        # Serves only the bundled fonts in `static/`.
         "--server.enableStaticServing",
         "true",
         "--server.enableXsrfProtection",
@@ -287,20 +299,24 @@ def cmd_serve(args: argparse.Namespace) -> int:
         "viewer",
         *theme_flags(),
     ]
+
     if args.port is not None:
         # A port that was asked for is strict: Streamlit exits if it is busy.
         command += ["--server.port", str(args.port)]
+
     if args.no_browser:
         # Otherwise Streamlit opens a browser tab when it has a display, and
         # quietly skips it when there is none (e.g. over SSH).
         command += ["--server.headless", "true"]
+
     if "logger.hideWelcomeMessage" in streamlit_options():
         # Streamlit's welcome message ends with an ad for its agent skills,
         # which can only be hidden together with it, so print the same
         # message here instead. That needs the port before Streamlit starts:
         # the first free one from 8501, as Streamlit would pick.
         port = args.port or next(
-            (p for p in range(8501, 8601) if port_is_free(args.host, p)), 8501
+            (p for p in range(8501, 8601) if port_is_free(args.host, p)),
+            8501,
         )
         command += [
             "--server.port",
@@ -316,7 +332,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
 
 def port_is_free(host: str, port: int) -> bool:
-    """Check whether the app could listen on ``host:port``.
+    """Check whether the app could listen on `host:port`.
 
     Args:
         host: Address to listen on.
@@ -349,6 +365,7 @@ def welcome(host: str, port: int) -> None:
         port: Port the app listens on.
     """
     heading("You can now view your Streamlit app in your browser.")
+
     if host in ("0.0.0.0", "::", ""):
         urls = [("Local URL", "localhost")]
         try:
@@ -366,7 +383,7 @@ def welcome(host: str, port: int) -> None:
 
 
 def streamlit_options() -> set[str]:
-    """Return the options the installed Streamlit knows, e.g. ``theme.font``.
+    """Return the options the installed Streamlit knows, e.g. `theme.font`.
 
     Returns:
         The option names, or an empty set if they can't be read.
@@ -386,7 +403,7 @@ def theme_flags() -> list[str]:
     """Build the theme options the installed Streamlit supports.
 
     Returns:
-        ``--theme.*`` command line flags with their values.
+        `--theme.*` command line flags with their values.
     """
     known = streamlit_options()
     flags: list[str] = []
@@ -411,7 +428,12 @@ def cmd_scan(args: argparse.Namespace) -> int:
     )
 
     counts = scanner.scan(
-        conn, root, args.depth, args.workers, args.force, print_progress
+        conn,
+        root,
+        args.depth,
+        args.workers,
+        args.force,
+        print_progress,
     )
     print()
     print(json.dumps(counts))
@@ -428,9 +450,11 @@ def cmd_hash_password(args: argparse.Namespace) -> int:
         Exit code.
     """
     password = getpass.getpass("Password: ")
+
     if len(password) < 8:
         error("Use at least 8 characters.")
         return 2
+
     if getpass.getpass("Repeat: ") != password:
         error("The passwords don't match.")
         return 2
@@ -501,7 +525,8 @@ def cmd_import(args: argparse.Namespace) -> int:
     )
     scanner.scan(conn, root, args.depth)
     result = db.import_annotations(
-        conn, json.loads(Path(args.file).read_text())
+        conn,
+        json.loads(Path(args.file).read_text()),
     )
     print(f"Matched {result['matched']} runs, {result['skipped']} not found")
     return 0
@@ -510,10 +535,10 @@ def cmd_import(args: argparse.Namespace) -> int:
 def cmd_view(argv: list[str]) -> int:
     """Open some run folders in TensorBoard (like tensorboard-view).
 
-    Unknown options are passed on to TensorBoard, e.g. ``--port 6007``.
+    Unknown options are passed on to TensorBoard, e.g. `--port 6007`.
 
     Args:
-        argv: Arguments after ``view``.
+        argv: Arguments after `view`.
 
     Returns:
         TensorBoard's exit code.
@@ -525,10 +550,14 @@ def cmd_view(argv: list[str]) -> int:
         allow_abbrev=False,
     )
     parser.add_argument(
-        "--logdir", nargs="+", required=True, help="run folders to show"
+        "--logdir",
+        nargs="+",
+        required=True,
+        help="run folders to show",
     )
     args, tensorboard_args = parser.parse_known_args(argv)
     missing = [p for p in args.logdir if not Path(p).is_dir()]
+
     if missing:
         error(f"{', '.join(missing)}: not a folder.")
         return 2
@@ -546,7 +575,10 @@ def build_parser() -> argparse.ArgumentParser:
         description="Bookkeeping for folders of TensorBoard runs.",
     )
     parser.add_argument(
-        "-v", "--version", action="version", version=version_text()
+        "-v",
+        "--version",
+        action="version",
+        version=version_text(),
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -554,7 +586,10 @@ def build_parser() -> argparse.ArgumentParser:
         if with_root:
             p.add_argument("root", nargs="?", default=".", help="runs folder")
         p.add_argument(
-            "--depth", type=int, default=1, help="folder depth of runs"
+            "--depth",
+            type=int,
+            default=1,
+            help="folder depth of runs",
         )
         p.add_argument(
             "--db",
@@ -570,7 +605,9 @@ def build_parser() -> argparse.ArgumentParser:
     serve = sub.add_parser("serve", help="start the web app (default)")
     common(serve)
     serve.add_argument(
-        "--host", default="127.0.0.1", help="address to listen on"
+        "--host",
+        default="127.0.0.1",
+        help="address to listen on",
     )
     serve.add_argument(
         "--port",
@@ -597,22 +634,27 @@ def build_parser() -> argparse.ArgumentParser:
     serve.set_defaults(func=cmd_serve)
 
     scan = sub.add_parser(
-        "scan", help="index a folder without starting the app"
+        "scan",
+        help="index a folder without starting the app",
     )
     common(scan)
     scan.add_argument(
-        "--force", action="store_true", help="re-parse every run"
+        "--force",
+        action="store_true",
+        help="re-parse every run",
     )
     scan.set_defaults(func=cmd_scan)
 
     # Handled before parsing (it passes unknown options to TensorBoard);
     # listed here so it shows up in --help.
     sub.add_parser(
-        "view", help="show only some runs in TensorBoard (tensorboard-view)"
+        "view",
+        help="show only some runs in TensorBoard (tensorboard-view)",
     )
 
     hp = sub.add_parser(
-        "hash-password", help="create the password hash variable"
+        "hash-password",
+        help="create the password hash variable",
     )
     hp.set_defaults(func=cmd_hash_password)
 
@@ -621,14 +663,16 @@ def build_parser() -> argparse.ArgumentParser:
     demo.set_defaults(func=cmd_demo)
 
     exp = sub.add_parser(
-        "export-annotations", help="write annotations to JSON"
+        "export-annotations",
+        help="write annotations to JSON",
     )
     common(exp)
     exp.add_argument("-o", "--output", default="tbook_annotations_export.json")
     exp.set_defaults(func=cmd_export)
 
     imp = sub.add_parser(
-        "import-annotations", help="merge annotations from JSON"
+        "import-annotations",
+        help="merge annotations from JSON",
     )
     imp.add_argument("root")
     imp.add_argument("file")
@@ -638,17 +682,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run the ``tensorboard-book`` command.
+    """Run the `tensorboard-book` command.
 
     Args:
-        argv: Arguments without the program name (defaults to ``sys.argv``).
+        argv: Arguments without the program name (defaults to `sys.argv`).
 
     Returns:
         Exit code.
     """
     argv = list(sys.argv[1:] if argv is None else argv)
+
     if argv and argv[0] == "view":
         return cmd_view(argv[1:])
+
     if not argv or (
         argv[0] not in SUBCOMMANDS
         and argv[0] not in ("-h", "--help", "-v", "--version")

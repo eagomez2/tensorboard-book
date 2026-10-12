@@ -1,11 +1,11 @@
 """Find TensorBoard runs in a folder, parse them, and index them into SQLite.
 
-A *run* is the directory ``depth`` levels below the root (1 by default) that
-contains at least one ``events.out.tfevents.*`` file somewhere inside it. Event
+A *run* is the directory `depth` levels below the root (1 by default) that
+contains at least one `events.out.tfevents.*` file somewhere inside it. Event
 files in subfolders of a run are merged into it and their tags are prefixed
-with the subfolder, so Keras-style ``train/`` and ``validation/`` folders
-become ``train/epoch_loss`` and ``validation/epoch_loss``. PyTorch's
-``add_hparams`` timestamp subfolders are merged without a prefix.
+with the subfolder, so Keras-style `train/` and `validation/` folders
+become `train/epoch_loss` and `validation/epoch_loss`. PyTorch's
+`add_hparams` timestamp subfolders are merged without a prefix.
 
 Scanning is incremental: a run is only re-parsed when the size or modification
 time of one of its event or config files changes.
@@ -16,6 +16,7 @@ by path, so renaming or moving a run folder keeps its tags, notes and groups.
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import math
@@ -35,6 +36,11 @@ from pathlib import Path
 import numpy as np
 import yaml
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
+
 from tensorboard_book import db
 
 SKIP_DIRS = {".git", "__pycache__", ".ipynb_checkpoints", db.DATA_DIR}
@@ -45,12 +51,10 @@ OWN_FILES = {
     "tbook_annotations.json",
     "tbook_annotations.json.tmp",
 }
-CONFIG_NAMES = {
-    f"{stem}.{ext}"
-    for stem in ("config", "hparams", "args", "params", "cfg", "opts")
-    for ext in ("yaml", "yml", "json")
-}
-PARSER_VERSION = 2  # Bump to re-parse every run after changing the parser.
+# Config files are .json, .yaml, .yml or .toml files whose name matches one
+# of the patterns in the "config_patterns" setting.
+CONFIG_SUFFIXES = (".json", ".yaml", ".yml", ".toml")
+PARSER_VERSION = 3  # Bump to re-parse every run after changing the parser.
 MAX_CONFIG_BYTES = 2_000_000
 MAX_TEXT_CHARS = 20_000
 TIMESTAMP_DIR = re.compile(r"^\d{9,}(\.\d+)?$")
@@ -64,7 +68,7 @@ def is_event_file(name: str) -> bool:
         name: Base name of the file.
 
     Returns:
-        True for ``events.out.tfevents.*`` files.
+        True for `events.out.tfevents.*` files.
     """
     return "tfevents" in name and name.startswith("events")
 
@@ -74,14 +78,14 @@ def discover_runs(root: Path, depth: int = 1) -> dict[str, dict]:
 
     Args:
         root: Folder that holds the runs.
-        depth: How many folder levels below ``root`` a run lives. Folders with
-            event files that are shallower than ``depth`` become runs
+        depth: How many folder levels below `root` a run lives. Folders with
+            event files that are shallower than `depth` become runs
             themselves.
 
     Returns:
-        Mapping of run path (POSIX, relative to root, ``"."`` for the root
-        itself) to a dict with ``event_files`` and ``files``. Both are lists of
-        ``(path relative to the run, size, mtime_ns)``. ``files`` excludes
+        Mapping of run path (POSIX, relative to root, `"."` for the root
+        itself) to a dict with `event_files` and `files`. Both are lists of
+        `(path relative to the run, size, mtime_ns)`. `files` excludes
         event files.
     """
     root = Path(root)
@@ -90,6 +94,7 @@ def discover_runs(root: Path, depth: int = 1) -> dict[str, dict]:
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
         parts = Path(dirpath).relative_to(root).parts
+
         if any(is_event_file(f) for f in filenames):
             run_keys.add(parts[:depth])
         for name in filenames:
@@ -115,6 +120,7 @@ def discover_runs(root: Path, depth: int = 1) -> dict[str, dict]:
             ),
             None,
         )
+
         if owner is None:
             continue
         rel = Path(*parts[len(owner) :], name).as_posix()
@@ -147,7 +153,7 @@ def fingerprint(run_dir: Path, event_files: list[tuple]) -> str:
 
     Args:
         run_dir: Absolute run folder.
-        event_files: ``(rel, size, mtime_ns)`` tuples of its event files.
+        event_files: `(rel, size, mtime_ns)` tuples of its event files.
 
     Returns:
         A hex digest.
@@ -162,28 +168,65 @@ def fingerprint(run_dir: Path, event_files: list[tuple]) -> str:
     return digest.hexdigest()
 
 
-def config_files(files: list[tuple]) -> list[str]:
+def config_rank(rel: str, patterns: list[str]) -> int | None:
+    """Return which config pattern a file matches first.
+
+    A pattern without a `/` is matched against the file name, in the
+    top folder of the run, one folder down or in `.hydra/`. A pattern
+    with a `/` is matched against the whole path inside the run, at any
+    depth. Case is ignored.
+
+    Args:
+        rel: Path of the file inside the run.
+        patterns: Glob patterns, such as `config.*` or `conf/*.toml`.
+
+    Returns:
+        The position of the first matching pattern, or None if the file
+        isn't a config file.
+    """
+    path = Path(rel)
+
+    if path.suffix.lower() not in CONFIG_SUFFIXES:
+        return None
+    shallow = len(path.parts) <= 2 or path.parts[0] == ".hydra"
+    for i, pattern in enumerate(patterns):
+        pattern = pattern.strip().lower()
+
+        if not pattern:
+            continue
+
+        if "/" in pattern:
+            if fnmatch.fnmatchcase(path.as_posix().lower(), pattern):
+                return i
+        elif shallow and fnmatch.fnmatchcase(path.name.lower(), pattern):
+            return i
+    return None
+
+
+def config_files(files: list[tuple], patterns: list[str]) -> list[str]:
     """Pick the config files inside a run whose values become hyperparameters.
 
     Args:
-        files: Non-event ``(rel, size, mtime_ns)`` tuples of the run.
+        files: Non-event `(rel, size, mtime_ns)` tuples of the run.
+        patterns: The "config_patterns" setting (see :func:`config_rank`).
 
     Returns:
-        Relative paths of config files at the top level, one folder down, or
-        in ``.hydra/``.
+        Relative paths of the config files, the run's main config file
+        first: ordered by the pattern they match, then by depth and name.
     """
-    picked = []
+    ranked = []
     for rel, size, _ in files:
-        path = Path(rel)
-        if size > MAX_CONFIG_BYTES or path.name not in CONFIG_NAMES:
-            continue
-        if len(path.parts) <= 2 or path.parts[0] == ".hydra":
-            picked.append(rel)
-    return sorted(picked, key=lambda p: (len(Path(p).parts), p))
+        rank = config_rank(rel, patterns)
+
+        if size <= MAX_CONFIG_BYTES and rank is not None:
+            ranked.append((rank, len(Path(rel).parts), rel))
+    return [rel for *_, rel in sorted(ranked)]
 
 
 def signature(
-    event_files: list[tuple], configs: list[str], files: list[tuple]
+    event_files: list[tuple],
+    configs: list[str],
+    files: list[tuple],
 ) -> str:
     """Hash the file stats that decide whether a run needs re-parsing.
 
@@ -203,14 +246,15 @@ def signature(
 class _LenientLoader(yaml.SafeLoader):
     """Safe YAML loader that reads unknown tags as plain data.
 
-    Lightning's ``hparams.yaml`` often contains ``!!python/object`` tags that
-    ``yaml.safe_load`` rejects. Nothing is ever instantiated.
+    Lightning's `hparams.yaml` often contains `!!python/object` tags that
+    `yaml.safe_load` rejects. Nothing is ever instantiated.
     """
 
 
 def _construct_unknown(loader, suffix, node):
     if isinstance(node, yaml.MappingNode):
         return loader.construct_mapping(node, deep=True)
+
     if isinstance(node, yaml.SequenceNode):
         return loader.construct_sequence(node, deep=True)
     return loader.construct_scalar(node)
@@ -233,6 +277,7 @@ def flatten(data: dict, prefix: str = "") -> dict:
     out = {}
     for key, value in data.items():
         name = f"{prefix}{key}"
+
         if isinstance(value, dict) and value:
             out.update(flatten(value, name + "."))
         elif isinstance(value, bool | int | float) or value is None:
@@ -245,7 +290,7 @@ def flatten(data: dict, prefix: str = "") -> dict:
 
 
 def read_config(path: Path) -> dict:
-    """Parse a YAML or JSON config file into flat hyperparameters.
+    """Parse a YAML, JSON or TOML config file into flat hyperparameters.
 
     Args:
         path: Config file.
@@ -256,8 +301,12 @@ def read_config(path: Path) -> dict:
     """
     try:
         text = path.read_text(errors="replace")
-        if path.suffix == ".json":
+        suffix = path.suffix.lower()
+
+        if suffix == ".json":
             data = json.loads(text)
+        elif suffix == ".toml":
+            data = tomllib.loads(text)
         else:
             # A SafeLoader subclass: unknown tags become plain data.
             data = yaml.load(text, Loader=_LenientLoader)  # noqa: S506
@@ -277,17 +326,20 @@ def read_records(path: Path):
         path: Event file.
 
     Yields:
-        Serialized ``Event`` protos as bytes.
+        Serialized `Event` protos as bytes.
     """
     with open(path, "rb") as fh:
         while True:
             header = fh.read(12)
+
             if len(header) < 12:
                 return
             (length,) = struct.unpack("<Q", header[:8])
+
             if length > 1 << 31:
                 return  # Corrupt length field.
             data = fh.read(length)
+
             if len(data) < length or len(fh.read(4)) < 4:
                 return
             yield data
@@ -295,15 +347,18 @@ def read_records(path: Path):
 
 def _proto_value(value) -> object:
     kind = value.WhichOneof("kind")
+
     if kind == "number_value" and value.number_value.is_integer():
         return int(value.number_value)  # hparams store every number as float.
+
     if kind in ("number_value", "string_value", "bool_value"):
         return getattr(value, kind)
     return None
 
 
 def compute_segments(
-    walls: np.ndarray, gap_seconds: float
+    walls: np.ndarray,
+    gap_seconds: float,
 ) -> list[list[float]]:
     """Split sorted wall times into activity segments at long silences.
 
@@ -312,7 +367,7 @@ def compute_segments(
         gap_seconds: Silence longer than this starts a new segment.
 
     Returns:
-        List of ``[start, end]`` pairs.
+        List of `[start, end]` pairs.
     """
     if len(walls) == 0:
         return []
@@ -335,10 +390,12 @@ def downsample_indices(values: np.ndarray, max_points: int) -> np.ndarray:
         Sorted indices to keep.
     """
     n = len(values)
+
     if max_points <= 0 or n <= max_points:
         return np.arange(n)
     keep = set(np.linspace(0, n - 1, max_points).astype(int).tolist())
     finite = np.isfinite(values)
+
     if finite.any():
         idx = np.nonzero(finite)[0]
         keep.add(int(idx[np.argmin(values[finite])]))
@@ -360,8 +417,8 @@ def parse_run(
 
     Args:
         run_dir: Absolute run folder.
-        event_files: Event file paths relative to ``run_dir``.
-        configs: Config file paths relative to ``run_dir``.
+        event_files: Event file paths relative to `run_dir`.
+        configs: Config file paths relative to `run_dir`.
         gap_seconds: Silence that splits the run into segments.
         max_points: Max stored points per scalar series (0 keeps all).
 
@@ -393,28 +450,33 @@ def parse_run(
                 event = event_pb2.Event.FromString(record)
                 n_events += 1
                 walls.append(event.wall_time)
+
                 if not event.HasField("summary"):
                     continue
                 for value in event.summary.value:
                     # TF2 only writes plugin metadata on a tag's first value.
                     plugin = value.metadata.plugin_data.plugin_name
+
                     if plugin:
                         plugin_by_tag[value.tag] = plugin
                     else:
                         plugin = plugin_by_tag.get(value.tag, "")
                     kind = value.WhichOneof("value")
                     tag = prefix + value.tag
+
                     if plugin == "hparams":
                         content = value.metadata.plugin_data.content
                         info = plugin_data_pb2.HParamsPluginData.FromString(
                             content
                         )
+
                         if info.HasField("session_start_info"):
                             for (
                                 k,
                                 v,
                             ) in info.session_start_info.hparams.items():
                                 hparams[k] = _proto_value(v)
+
                             if "event hparams" not in sources:
                                 sources.append("event hparams")
                     elif kind == "simple_value":
@@ -440,16 +502,19 @@ def parse_run(
                         texts[tag] = text[:MAX_TEXT_CHARS]
                     else:
                         other.setdefault(
-                            plugin or kind or "unknown", set()
+                            plugin or kind or "unknown",
+                            set(),
                         ).add(tag)
         except Exception as exc:  # noqa: BLE001 - keep whatever was read.
             errors.append(f"{rel}: {type(exc).__name__}: {exc}")
 
+    # The main config file comes first and wins when files share a key.
     config_values: dict = {}
     for rel in configs:
         values = read_config(run_dir / rel)
+
         if values:
-            config_values.update(values)
+            config_values = {**values, **config_values}
             sources.append(rel)
     hparams = {**config_values, **hparams}
 
@@ -476,6 +541,7 @@ def parse_run(
             "step_min": None,
             "step_max": None,
         }
+
         if finite.any():
             idx = np.nonzero(finite)[0]
             imin = idx[np.argmin(v[finite])]
@@ -518,7 +584,10 @@ def parse_run(
 
 
 def _save_parsed(
-    conn: sqlite3.Connection, run_id: int, sig: str, res: dict
+    conn: sqlite3.Connection,
+    run_id: int,
+    sig: str,
+    res: dict,
 ) -> None:
     conn.execute("DELETE FROM metrics WHERE run_id = ?", (run_id,))
     conn.execute("DELETE FROM series WHERE run_id = ?", (run_id,))
@@ -593,25 +662,27 @@ def scan(
     Args:
         conn: Open database connection.
         root: Folder that holds the runs.
-        depth: Folder depth of runs below ``root``.
+        depth: Folder depth of runs below `root`.
         workers: Worker processes for parsing (1 parses in this process).
             Only use more than 1 from a guarded entry point (the CLI), not
             from inside Streamlit.
         force: Re-parse every run even if unchanged. This also happens
             automatically when the segment gap, point limit or parser version
             changed since the last scan.
-        progress: Optional ``callback(done, total, run_path)``.
+        progress: Optional `callback(done, total, run_path)`.
 
     Returns:
-        Counts: ``total``, ``new``, ``parsed``, ``renamed``, ``missing``.
+        Counts: `total`, `new`, `parsed`, `renamed`, `missing`.
     """
     root = Path(root).resolve()
     settings = db.get_settings(conn)
     gap_seconds = float(settings["gap_minutes"]) * 60
     max_points = int(settings["max_points"])
+    patterns = list(settings["config_patterns"])
     # Settings that change parse results: when they differ from the last scan,
     # every run is re-parsed so all runs use the same rules.
     parse_key = json.dumps([PARSER_VERSION, gap_seconds, max_points])
+
     if db.get_meta(conn, "parse_key") != parse_key:
         force = True
     discovered = discover_runs(root, depth)
@@ -652,6 +723,7 @@ def scan(
     for path, info in discovered.items():
         fp = fps[path]
         row = by_fp.get(fp)
+
         if (
             row is None
             and path in by_path
@@ -660,8 +732,10 @@ def scan(
             # Same folder, but its first event file changed: keep the record.
             row = by_path[path]
             conn.execute(
-                "UPDATE runs SET fingerprint = ? WHERE id = ?", (fp, row["id"])
+                "UPDATE runs SET fingerprint = ? WHERE id = ?",
+                (fp, row["id"]),
             )
+
         if row is None:
             cur = conn.execute(
                 (
@@ -674,10 +748,11 @@ def scan(
             counts["new"] += 1
         else:
             run_id, old_sig = row["id"], row["signature"]
+
             if row["path"] != path:
                 counts["renamed"] += 1
         seen.add(run_id)
-        configs = config_files(info["files"])
+        configs = config_files(info["files"], patterns)
         sig = signature(info["event_files"], configs, info["files"])
         mtimes = [f[2] for f in info["event_files"]]
         artifact_bytes = sum(f[1] for f in info["files"])
@@ -695,6 +770,7 @@ def scan(
                 run_id,
             ),
         )
+
         if force or sig != old_sig:
             event_rel = [f[0] for f in info["event_files"]]
             jobs.append(
@@ -703,7 +779,8 @@ def scan(
 
     gone = [r["id"] for r in rows if r["id"] not in seen]
     conn.executemany(
-        "UPDATE runs SET missing = 1 WHERE id = ?", [(i,) for i in gone]
+        "UPDATE runs SET missing = 1 WHERE id = ?",
+        [(i,) for i in gone],
     )
     counts["missing"] = len(gone)
     conn.commit()
@@ -718,10 +795,12 @@ def scan(
         _save_parsed(conn, job[0], job[2], result)
         conn.commit()
         done += 1
+
         if progress:
             progress(done, len(jobs), job[1])
 
     pending = list(jobs)
+
     if workers > 1 and len(jobs) > 1:
         # "spawn" behaves the same on Linux, macOS and Windows. Workers must
         # only be started from a guarded entry point such as the CLI, never
@@ -730,7 +809,8 @@ def scan(
         context = multiprocessing.get_context("spawn")
         try:
             with ProcessPoolExecutor(
-                max_workers=workers, mp_context=context
+                max_workers=workers,
+                mp_context=context,
             ) as pool:
                 futures = [
                     (job, pool.submit(parse_run, *job_args(job)))

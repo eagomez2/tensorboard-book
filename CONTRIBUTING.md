@@ -12,6 +12,18 @@ uv run ruff format src tests
 uv build                      # sdist and wheel with the uv build backend
 ```
 
+## Code style
+
+`ruff format` and `ruff check` set most of the style. On top of them:
+
+- Leave a blank line before an `if`, `while` or `match` statement, unless
+  it is the first statement of its block or follows a docstring.
+- When a call or a definition doesn't fit on one line, put each argument
+  on its own line, with a trailing comma. Add the trailing comma when
+  `ruff format` puts all the arguments together on one line.
+- Write code in docstrings and comments between single backticks
+  (`` `name` ``), as in Markdown, not double ones.
+
 Tables are [polars](https://pola.rs) DataFrames throughout. The one place
 pandas appears is the last step before a table with highlighted cells is
 drawn, because Streamlit only supports per-cell styling through pandas'

@@ -1,9 +1,9 @@
 """Streamlit app for browsing and annotating a folder of TensorBoard runs.
 
-Start it with the ``tensorboard-book`` command rather than
-``streamlit run``: the command checks the password setup, runs the first
+Start it with the `tensorboard-book` command rather than
+`streamlit run`: the command checks the password setup, runs the first
 (parallel) scan, and passes the configuration through environment
-variables (``TBOOK_ROOT``, ``TBOOK_DB``, ``TBOOK_DEPTH``).
+variables (`TBOOK_ROOT`, `TBOOK_DB`, `TBOOK_DEPTH`).
 
 Scans started from the app always parse in this process. Worker
 processes would re-import this script as their main module and start the
@@ -13,7 +13,7 @@ Tables are polars DataFrames. Streamlit can only highlight single cells
 through a pandas Styler, so :func:`styled` converts a finished table right
 before it is drawn; pandas is not used anywhere else.
 
-Each view is one function below; ``main`` handles login, scanning, the
+Each view is one function below; `main` handles login, scanning, the
 sidebar filters and picks the view.
 """
 
@@ -86,23 +86,23 @@ MENU = {
 # One line under each view's title saying what the view is for.
 PURPOSE = {
     "Experiments": (
-        "Every run that matches the sidebar filters, with its best metrics."
+        "Every run that matches the sidebar filters, with its best scalars."
     ),
     "Compare": (
-        "Each run is read at the step where its selection metric is best, "
-        "and every metric is reported at that step."
+        "Each run is read at the step where its selection scalar is best, "
+        "and every scalar is reported at that step."
     ),
     "Curves": "Training curves of up to eight runs, overlaid.",
     "Timeline": "When runs were running, and how much compute they used.",
     "Run details": (
-        "Everything about one run: timing, notes, metrics and files."
+        "Everything about one run: timing, notes, scalars and files."
     ),
     "Collections": (
         "Named sets of runs, such as a sweep or an ablation, each with the "
-        "metric they are compared on."
+        "scalar they are compared on."
     ),
     "Fields and settings": (
-        "The values you add to runs and how metrics are shown. Add, rename, "
+        "The values you add to runs and how scalars are shown. Add, rename, "
         "regroup or hide fields; choose which numbers rank and in which "
         "direction."
     ),
@@ -112,7 +112,7 @@ PURPOSE = {
     ),
 }
 # Fonts ship inside the package and are served by Streamlit's static file
-# server (``--server.enableStaticServing``), so the app works offline. The
+# server (`--server.enableStaticServing`), so the app works offline. The
 # rest adds what the theme options cannot express: tighter page padding, a
 # see-through header, the side menu, summary tiles and pills. Colors are
 # theme-neutral (opacity and translucent fills), so they work in both the
@@ -301,12 +301,13 @@ BUILTIN_COLUMNS = {
     "pause after",
     "path",
     "modified",
-    "selection metric",
+    "selection scalar",
     "description",
     "property",
     "type",
     "values",
     "metric",
+    "scalar",
     "better",
     "total",
     "artifacts",
@@ -404,14 +405,14 @@ def load_data(db_path: str, version: int) -> dict:
 
     Args:
         db_path: Database path (part of the cache key).
-        version: ``db.data_version``; any write invalidates the cache.
+        version: `db.data_version`; any write invalidates the cache.
 
     Returns:
-        Dict with ``runs`` and ``metrics`` (DataFrames), ``groups`` (a
-        list of dicts), ``details`` (decoded JSON fields per run id),
-        ``hparams`` (a wide DataFrame), ``directions``, ``settings``,
-        ``fields`` (the fields you defined), ``tags_field``,
-        ``metric_display`` and ``run_fields`` (values by run id).
+        Dict with `runs` and `metrics` (DataFrames), `groups` (a
+        list of dicts), `details` (decoded JSON fields per run id),
+        `hparams` (a wide DataFrame), `directions`, `settings`,
+        `fields` (the fields you defined), `tags_field`,
+        `metric_display` and `run_fields` (values by run id).
     """
     conn = db.connect(db_path)
     details = db.load_run_details(conn)
@@ -451,6 +452,7 @@ def run_scan(force: bool = False, quiet: bool = False) -> dict | None:
         Scan counts, or None if another session is already scanning.
     """
     lock = scan_lock()
+
     if not lock.acquire(blocking=False):
         return None
     try:
@@ -460,10 +462,12 @@ def run_scan(force: bool = False, quiet: bool = False) -> dict | None:
         def progress(done, total, path):
             if bar is not None:
                 bar.progress(
-                    done / total, text=f"Parsed {done}/{total}: {path}"
+                    done / total,
+                    text=f"Parsed {done}/{total}: {path}",
                 )
 
         counts = scanner.scan(conn, ROOT, DEPTH, 1, force, progress)
+
         if bar is not None:
             bar.empty()
         conn.close()
@@ -512,7 +516,7 @@ def cell_css(kind: str) -> str:
     """Return the CSS of a highlighted table cell for the active theme.
 
     Args:
-        kind: ``"best"``, ``"differ"``, or ``"good"`` and ``"bad"`` for a
+        kind: `"best"`, `"differ"`, or `"good"` and `"bad"` for a
             difference from the baseline that is better or worse.
     """
     return CELL_CSS["dark" if is_dark() else "light"][kind]
@@ -590,7 +594,7 @@ def short_path(path: Path, limit: int = 80) -> str:
         limit: Longest text shown, in characters.
 
     Returns:
-        HTML for ``st.caption(..., unsafe_allow_html=True)``.
+        HTML for `st.caption(..., unsafe_allow_html=True)`.
     """
     full = str(path)
     shown = full if len(full) <= limit else "…" + full[-(limit - 1) :]
@@ -606,8 +610,8 @@ def go_to(view: str, **state) -> None:
     """Switch view from a button callback, optionally setting state keys.
 
     Args:
-        view: One of ``VIEWS``.
-        **state: Extra ``st.session_state`` values, e.g. ``run_id``.
+        view: One of `VIEWS`.
+        **state: Extra `st.session_state` values, e.g. `run_id`.
     """
     st.session_state.view = view
     for key, value in state.items():
@@ -627,6 +631,7 @@ def link_params(params: dict) -> dict[str, list[str]]:
     for key, value in params.items():
         values = value if isinstance(value, list) else [value]
         values = [str(v) for v in values if v not in (None, "")]
+
         if values:
             out[key] = values
     return out
@@ -640,6 +645,7 @@ def update_link(params: dict) -> None:
     """
     wanted = link_params(params)
     current = {k: st.query_params.get_all(k) for k in st.query_params}
+
     if current != wanted:
         st.query_params.from_dict(wanted)
 
@@ -648,32 +654,39 @@ def open_link(data: dict) -> None:
     """Open the comparison a shared link describes, once per session.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
     """
     if st.session_state.get("link_opened"):
         return
     st.session_state.link_opened = True
     params = st.query_params
+
     if params.get("view") != "compare":
         return
     st.session_state.view = "Compare"
     ids = {r["name"]: r["id"] for r in data["by_id"].values()}
     runs = [ids[n] for n in params.get_all("run") if n in ids]
+
     if runs:
         st.session_state.compare_runs = runs
         source = "Selected runs"
     else:
         source = params.get("group", "Runs shown in Experiments")
     st.session_state.cmp_source = source
+
     if "show" in params:
         st.session_state.cmp_show = params.get_all("show")
+
     if "metric" in params:
         st.session_state[f"sel_{source}"] = params["metric"]
+
     if "at" in params:
         st.session_state[f"report_{source}"] = params.get_all("at")
     st.session_state[f"agg_{source}"] = params.get("agg") == "1"
+
     if "seeds" in params:
         st.session_state[f"seeds_{source}"] = params["seeds"]
+
     if "baseline" in params:
         st.session_state[f"base_{source}"] = params["baseline"]
 
@@ -711,6 +724,7 @@ def default_metrics(options: list[str], limit: int = 4) -> list[str]:
     def rank(tag: str) -> int:
         # Validation first (checkpoints are chosen on it), then test.
         name = tag.lower()
+
         if "val" in name or "eval" in name:
             return 0
         return 1 if "test" in name else 2
@@ -723,7 +737,7 @@ def widget_state(key: str, options, default) -> None:
     """Prepare the value of a keyed widget in session state.
 
     Keyed widgets get their starting value here instead of through
-    ``default=`` or ``index=``: Streamlit warns when a widget has both a
+    `default=` or `index=`: Streamlit warns when a widget has both a
     default and a value set through session state. This also drops values
     that stopped being options (e.g. a deleted tag), which would otherwise
     make the widget fail.
@@ -734,9 +748,11 @@ def widget_state(key: str, options, default) -> None:
         default: Starting value (a list for multiselects).
     """
     allowed = set(options)
+
     if key not in st.session_state:
         st.session_state[key] = default
     value = st.session_state[key]
+
     if isinstance(value, list):
         st.session_state[key] = [v for v in value if v in allowed]
     elif value not in allowed:
@@ -759,7 +775,7 @@ def pill_column(label: str, lists: list[list[str]]):
         lists: The names of every run (a list of lists).
 
     Returns:
-        A ``MultiselectColumn`` config.
+        A `MultiselectColumn` config.
     """
     return st.column_config.MultiselectColumn(
         label,
@@ -773,8 +789,8 @@ def info_value(column: str, members: list[dict]):
     """Summarize an info column over one run or the runs of one config.
 
     Args:
-        column: One of ``tags``, ``notes``, ``status``, ``collections``,
-            ``steps``.
+        column: One of `tags`, `notes`, `status`, `collections`,
+            `steps`.
         members: The runs (as dicts) behind one table row.
 
     Returns:
@@ -784,12 +800,15 @@ def info_value(column: str, members: list[dict]):
     if column in ("tags", "collections"):
         key = "groups" if column == "collections" else column
         names = {name for m in members for name in m[key]}
+
         if column == "tags":
             order = {t: i for i, t in enumerate(tags_field().options)}
             return sorted(names, key=lambda t: (order.get(t, len(order)), t))
         return sorted(names)
+
     if column == "notes":
         return " · ".join(m["notes"] for m in members if m["notes"])
+
     if column == "status":
         return ", ".join(sorted({m["status"] for m in members}))
     steps = [m["max_step"] for m in members if m["max_step"] is not None]
@@ -800,12 +819,12 @@ def info_column_config(lists: dict[str, list[list[str]]]) -> dict:
     """Column configs for tag, collection and run-list columns.
 
     Args:
-        lists: ``{"tags": ..., "groups": ...}`` with the tags and
+        lists: `{"tags": ..., "groups": ...}` with the tags and
             collections of every run, so pill colors match the rest of the
             app. Tags take their colors from the order of their options.
 
     Returns:
-        A ``column_config`` mapping.
+        A `column_config` mapping.
     """
     return {
         "tags": options_column("tags", tags_field()),
@@ -831,8 +850,10 @@ def field_cell(fld: Field, members: list[dict]):
     values = [
         m["fields"][fld.name] for m in members if fld.name in m["fields"]
     ]
+
     if fld.is_number:
         return sum(values) / len(values) if values else None
+
     if fld.has_options:
         items = {
             v
@@ -841,6 +862,7 @@ def field_cell(fld: Field, members: list[dict]):
         }
         order = {o: i for i, o in enumerate(fld.options)}
         return sorted(items, key=lambda v: (order.get(v, len(order)), v))
+
     if fld.type == "bool":
         return values[0] if values and len(set(values)) == 1 else None
     return " · ".join(dict.fromkeys(str(v) for v in values)) or None
@@ -855,12 +877,14 @@ def filter_value(fld: Field, value):
 
     Returns:
         A float for numbers; text otherwise (tags joined by commas, yes/no
-        as ``yes`` or ``no``).
+        as `yes` or `no`).
     """
     if value is None or fld.is_number:
         return value
+
     if fld.type == "tags":
         return ", ".join(value)
+
     if fld.type == "bool":
         return "yes" if value else "no"
     return str(value)
@@ -875,16 +899,18 @@ FIELD_DTYPES = {
 
 
 def field_columns(
-    options: list[str], defined: list[Field], taken
+    options: list[str],
+    defined: list[Field],
+    taken,
 ) -> dict[str, Field]:
     """Map the chosen field options of "Show" to column labels.
 
     A field's column is labeled with its name, unit and direction, such
-    as ``params (M) ↓``, unless another column already uses it; then
-    ``(field)`` is appended.
+    as `params (M) ↓`, unless another column already uses it; then
+    `(field)` is appended.
 
     Args:
-        options: Chosen "Show" options (only ``prop:`` ones are used).
+        options: Chosen "Show" options (only `prop:` ones are used).
         defined: All fields.
         taken: Column labels already in the table.
 
@@ -895,9 +921,11 @@ def field_columns(
     columns = {}
     for option in options:
         fld = by_name.get(option.removeprefix(PROP))
+
         if not option.startswith(PROP) or fld is None:
             continue
         label = fld.label()
+
         if label in taken or label in columns:
             label = f"{label} (field)"
         columns[label] = fld
@@ -905,7 +933,9 @@ def field_columns(
 
 
 def add_field_columns(
-    columns: dict, field_cols: dict[str, Field], members: list[list[dict]]
+    columns: dict,
+    field_cols: dict[str, Field],
+    members: list[list[dict]],
 ) -> None:
     """Add field columns to a table being built, one cell per row.
 
@@ -965,7 +995,7 @@ def options_column(label: str, fld: Field):
         fld: A choice or tags field.
 
     Returns:
-        A ``MultiselectColumn`` config.
+        A `MultiselectColumn` config.
     """
     colors = fld.option_colors()
     return st.column_config.MultiselectColumn(
@@ -984,18 +1014,20 @@ def field_config(columns: dict[str, Field]) -> dict:
         columns: Output of :func:`field_columns`.
 
     Returns:
-        A ``column_config`` mapping.
+        A `column_config` mapping.
     """
     config = {}
     for label, fld in columns.items():
         help_text = fld.description or None
+
         if fld.has_options:
             config[label] = options_column(label, fld)
         elif fld.type == "link":
             config[label] = st.column_config.LinkColumn(label, help=help_text)
         elif fld.type == "bool":
             config[label] = st.column_config.CheckboxColumn(
-                label, help=help_text
+                label,
+                help=help_text,
             )
         else:
             config[label] = st.column_config.Column(label, help=help_text)
@@ -1019,8 +1051,10 @@ def field_input(fld: Field, current, key: str, label: str | None = None):
     if label is None:
         label = f"{fld.name} ({fld.unit})" if fld.unit else fld.name
     common = {"key": key, "help": fld.description or None}
+
     if fld.is_number:
         placeholder = fld.unit or "number"
+
         if fld.scale:
             factor = fields.SCALES[fld.scale]
             placeholder = (
@@ -1033,8 +1067,10 @@ def field_input(fld: Field, current, key: str, label: str | None = None):
             placeholder=placeholder,
             **common,
         )
+
     if fld.type == "choice":
         options = list(fld.options)
+
         if current is not None and current not in options:
             options.append(current)
         return st.selectbox(
@@ -1045,6 +1081,7 @@ def field_input(fld: Field, current, key: str, label: str | None = None):
             accept_new_options=True,
             **common,
         )
+
     if fld.type == "tags":
         current = list(current or [])
         options = [*fld.options, *(t for t in current if t not in fld.options)]
@@ -1056,10 +1093,12 @@ def field_input(fld: Field, current, key: str, label: str | None = None):
             accept_new_options=True,
             **common,
         )
+
     if fld.type == "bool":
         options = ["yes", "no"]
         index = None if current is None else (0 if current else 1)
         return st.selectbox(label, options, index=index, **common)
+
     if fld.type == "date":
         value = datetime.fromisoformat(current).date() if current else None
         return st.date_input(label, value=value, **common)
@@ -1079,6 +1118,7 @@ def field_html(fld: Field, value) -> str:
     """
     if value is None:
         return ""
+
     if fld.has_options:
         colors = fld.option_colors()
         items = value if isinstance(value, list) else [value]
@@ -1089,6 +1129,7 @@ def field_html(fld: Field, value) -> str:
         )
         return f'<span class="tb-pills">{pills}</span>'
     text = html.escape(fld.format(value))
+
     if fld.type == "link" and text.startswith(("http://", "https://")):
         return f'<a href="{text}" target="_blank">{text}</a>'
     return text
@@ -1098,7 +1139,7 @@ def key_values(pairs: list[tuple[str, str]], columns: int = 3) -> None:
     """Draw labels with values in a compact grid.
 
     Args:
-        pairs: ``(label, html)`` pairs; the value is escaped HTML. Empty
+        pairs: `(label, html)` pairs; the value is escaped HTML. Empty
             values show a dash.
         columns: Number of grid columns.
     """
@@ -1118,11 +1159,12 @@ def group_fields(defined: list[Field]) -> dict[str, list[Field]]:
         defined: Fields in display order.
 
     Returns:
-        Fields keyed by group, ungrouped ones first under ``""``.
+        Fields keyed by group, ungrouped ones first under `""`.
     """
     groups: dict[str, list[Field]] = {"": []}
     for fld in defined:
         groups.setdefault(fld.group, []).append(fld)
+
     if not groups[""]:
         del groups[""]
     return groups
@@ -1135,9 +1177,10 @@ def card(title: str | None = None):
         title: Heading shown at the top.
 
     Returns:
-        The container, to use with ``with``.
+        The container, to use with `with`.
     """
     box = st.container(border=True)
+
     if title:
         box.markdown(f"#### {html.escape(title)}")
     return box
@@ -1147,6 +1190,7 @@ def show_label(option: str) -> str:
     """Display text of a "Show" option: fields show their group."""
     if option.startswith(PROP):
         fld = FIELDS_BY_NAME.get(option.removeprefix(PROP))
+
         if fld is not None:
             return fld.label(with_group=True, arrow=False)
         return option.removeprefix(PROP)
@@ -1165,7 +1209,7 @@ def column_label(option: str) -> str:
 
 
 def format_hparam(value) -> str:
-    """Format a hyperparameter for display (``2`` rather than ``2.0``).
+    """Format a hyperparameter for display (`2` rather than `2.0`).
 
     Args:
         value: Any hyperparameter value.
@@ -1175,6 +1219,7 @@ def format_hparam(value) -> str:
     """
     if an.is_missing(value):
         return ""
+
     if isinstance(value, float) and value.is_integer() and abs(value) < 1e15:
         return str(int(value))
     return str(value)
@@ -1183,7 +1228,7 @@ def format_hparam(value) -> str:
 def arrow(tag: str, directions: dict) -> str:
     """Label a metric with its unit and ↑ or ↓, like a field.
 
-    For example ``val/acc ↑`` or ``eval/latency (ms) ↓``: higher or lower
+    For example `val/acc ↑` or `eval/latency (ms) ↓`: higher or lower
     is better, and the unit (with its scale prefix) set in Fields and
     settings → Metrics.
     """
@@ -1202,11 +1247,12 @@ def metric_field(tag: str, directions: dict | None = None) -> Field:
 
     Returns:
         A number field with the metric's group (its tag up to the last
-        ``/``, unless set), unit, scale and decimals.
+        `/`, unless set), unit, scale and decimals.
     """
     shown = METRIC_DISPLAY.get(tag, {})
     group = shown.get("group")
     direction = None
+
     if directions is not None:
         down = an.direction_of(tag, directions) == "min"
         direction = "lower" if down else "higher"
@@ -1233,6 +1279,7 @@ def metric_format(tag: str):
         A function from value to text.
     """
     shown = METRIC_DISPLAY.get(tag)
+
     if not shown or (shown["decimals"] is None and not shown["scale"]):
         return an.format_value
     fld = metric_field(tag)
@@ -1244,13 +1291,14 @@ def best_rows(values: list, direction: str) -> set[int]:
 
     Args:
         values: Column values; missing values are ignored.
-        direction: ``"max"`` or ``"min"``.
+        direction: `"max"` or `"min"`.
 
     Returns:
         Positions of every row equal to the best value, or an empty set
         when fewer than two values exist (nothing to compare).
     """
     present = [v for v in values if not an.is_missing(v)]
+
     if len(present) < 2:
         return set()
     best = min(present) if direction == "min" else max(present)
@@ -1264,7 +1312,7 @@ def styled(
     css: str | None = None,
     cells: dict[str, list[str]] | None = None,
 ):
-    """Turn a finished polars table into a Styler for ``st.dataframe``.
+    """Turn a finished polars table into a Styler for `st.dataframe`.
 
     Streamlit only supports per-cell styling through pandas' Styler, so
     this converts the table at the last moment. List columns become plain
@@ -1303,10 +1351,10 @@ def headers(columns, config: dict | None = None) -> dict:
 
     Args:
         columns: Column names of the table.
-        config: The table's ``column_config``, if any.
+        config: The table's `column_config`, if any.
 
     Returns:
-        A ``column_config`` where every column in ``BUILTIN_COLUMNS`` is
+        A `column_config` where every column in `BUILTIN_COLUMNS` is
         labelled with a capital first letter.
     """
     config = dict(config or {})
@@ -1315,6 +1363,7 @@ def headers(columns, config: dict | None = None) -> dict:
             continue
         label = name[0].upper() + name[1:]
         current = config.get(name)
+
         if isinstance(current, dict):
             config[name] = {**current, "label": label}
         elif current is None:
@@ -1346,15 +1395,16 @@ def report_chart(fig, key: str, name: str, where=None, **kwargs):
         key: Widget key of the chart.
         name: What the chart shows; becomes the file name.
         where: Container to draw into; the page by default.
-        **kwargs: Passed to ``st.plotly_chart`` (e.g. ``on_select``).
+        **kwargs: Passed to `st.plotly_chart` (e.g. `on_select`).
 
     Returns:
-        What ``st.plotly_chart`` returns (the selection, if any).
+        What `st.plotly_chart` returns (the selection, if any).
     """
     where = where or st
     event = where.plotly_chart(fig, key=key, **kwargs)
     where.container(
-        horizontal=True, horizontal_alignment="right"
+        horizontal=True,
+        horizontal_alignment="right",
     ).download_button(
         "Download figure",
         data=lambda: fig.to_json(),
@@ -1370,18 +1420,19 @@ def report_chart(fig, key: str, name: str, where=None, **kwargs):
 
 
 def show_table(data, **kwargs):
-    """Draw ``st.dataframe`` with capitalized headers for built-in columns.
+    """Draw `st.dataframe` with capitalized headers for built-in columns.
 
     Args:
         data: A polars DataFrame or a pandas Styler from :func:`styled`.
-        **kwargs: Passed on to ``st.dataframe``.
+        **kwargs: Passed on to `st.dataframe`.
 
     Returns:
-        What ``st.dataframe`` returns (the selection, when enabled).
+        What `st.dataframe` returns (the selection, when enabled).
     """
     frame = getattr(data, "data", data)  # A Styler wraps its DataFrame.
     kwargs["column_config"] = headers(
-        list(frame.columns), kwargs.get("column_config")
+        list(frame.columns),
+        kwargs.get("column_config"),
     )
     return st.dataframe(data, **kwargs)
 
@@ -1394,7 +1445,7 @@ def table_height(rows: int, limit: int = 740) -> int:
         limit: Maximum height.
 
     Returns:
-        Pixels for ``st.dataframe(height=...)``.
+        Pixels for `st.dataframe(height=...)`.
     """
     return min(35 * (rows + 1) + 3, limit)
 
@@ -1406,7 +1457,7 @@ def list_artifacts(run_dir: Path) -> pl.DataFrame:
         run_dir: Absolute run folder.
 
     Returns:
-        DataFrame with ``path`` (relative), ``size`` and ``modified``.
+        DataFrame with `path` (relative), `size` and `modified`.
     """
     rows = []
     for dirpath, dirnames, filenames in os.walk(run_dir, followlinks=False):
@@ -1448,6 +1499,7 @@ def safe_file(run_dir: Path, rel: str) -> Path | None:
         file.
     """
     path = (run_dir / rel).resolve()
+
     if not path.is_relative_to(ROOT) or not path.is_file():
         return None
     return path
@@ -1465,6 +1517,7 @@ def read_text(path: Path, limit: int = MAX_PREVIEW_BYTES) -> str | None:
     """
     with open(path, "rb") as fh:
         chunk = fh.read(limit)
+
     if b"\x00" in chunk[:8192]:
         return None
     try:
@@ -1483,7 +1536,10 @@ def view_help() -> None:
     topics = list(HELP)
     widget_state("help_topic", topics, topics[0])
     choice = st.pills(
-        "Topic", topics, key="help_topic", label_visibility="collapsed"
+        "Topic",
+        topics,
+        key="help_topic",
+        label_visibility="collapsed",
     )
     with st.container(border=True):
         st.markdown(HELP[choice or topics[0]])
@@ -1501,9 +1557,12 @@ def page_header(view: str) -> None:
         vertical_alignment="bottom",
     )
     row.title(view)
+
     if view in HELP:
         with row.popover(
-            "How this page works", icon=":material/help:", type="tertiary"
+            "How this page works",
+            icon=":material/help:",
+            type="tertiary",
         ):
             st.markdown(HELP[view])
     st.caption(PURPOSE[view])
@@ -1514,7 +1573,7 @@ def toolbar():
 
     Returns:
         A horizontal container for plain (secondary) buttons; push a
-        download to the right with ``bar.space("stretch")``.
+        download to the right with `bar.space("stretch")`.
     """
     return st.container(horizontal=True, vertical_alignment="center")
 
@@ -1535,14 +1594,14 @@ def section_label(text: str, first: bool = True) -> None:
 
 
 def remember_filter(name: str) -> None:
-    """Widget callback: copy a filter widget's value into ``filters``.
+    """Widget callback: copy a filter widget's value into `filters`.
 
     Filter widgets are only drawn in the views they apply to, and
     Streamlit forgets the value of widgets that aren't drawn. Keeping the
-    values in ``st.session_state.filters`` preserves them across views.
+    values in `st.session_state.filters` preserves them across views.
 
     Args:
-        name: Filter name (the widget key is ``f_<name>``).
+        name: Filter name (the widget key is `f_<name>`).
     """
     st.session_state.filters[name] = st.session_state[f"f_{name}"]
 
@@ -1551,14 +1610,15 @@ def filter_widget(draw, name: str, label: str, *args, **kwargs):
     """Draw one filter widget, starting from its remembered value.
 
     Args:
-        draw: The Streamlit widget function, e.g. ``st.multiselect``.
-        name: Filter name in ``st.session_state.filters``.
+        draw: The Streamlit widget function, e.g. `st.multiselect`.
+        name: Filter name in `st.session_state.filters`.
         label: Widget label.
         *args: Extra positional arguments (e.g. the options).
         **kwargs: Extra keyword arguments for the widget.
     """
     key = f"f_{name}"
     value = st.session_state.filters[name]
+
     if args:  # A widget with options: drop remembered values that vanished.
         widget_state(key, args[0], value)
     elif key not in st.session_state:
@@ -1574,24 +1634,28 @@ def filter_widget(draw, name: str, label: str, *args, **kwargs):
 
 
 def apply_filters(
-    runs: pl.DataFrame, by_id: dict[int, dict], filters: dict
+    runs: pl.DataFrame,
+    by_id: dict[int, dict],
+    filters: dict,
 ) -> pl.DataFrame:
     """Return the runs that pass the sidebar filters.
 
     Args:
-        runs: All runs, with a ``status`` column.
+        runs: All runs, with a `status` column.
         by_id: Every run as a dict, by id (for the text search).
-        filters: ``st.session_state.filters``.
+        filters: `st.session_state.filters`.
 
     Returns:
         The filtered runs.
     """
     visible = runs
     group = filters["group"]
+
     if group == "No collection":
         visible = visible.filter(pl.col("groups").list.len() == 0)
     elif group != "All runs":
         visible = visible.filter(pl.col("groups").list.contains(group))
+
     if filters["tags"]:
         wanted = filters["tags"]
         visible = visible.filter(
@@ -1599,11 +1663,14 @@ def apply_filters(
         )
     statuses = filters["status"] or ["Active", "Stopped", "Missing"]
     visible = visible.filter(pl.col("status").is_in(statuses))
+
     if filters["starred"]:
         visible = visible.filter(pl.col("starred") == 1)
+
     if not filters["archived"]:
         visible = visible.filter(pl.col("archived") == 0)
     query = filters["search"].strip().lower()
+
     if query:
 
         def haystack(run: dict) -> str:
@@ -1622,7 +1689,10 @@ def apply_filters(
 
 
 def sidebar(
-    runs: pl.DataFrame, groups: list[dict], editor: bool, now: float
+    runs: pl.DataFrame,
+    groups: list[dict],
+    editor: bool,
+    now: float,
 ) -> None:
     """Draw the sidebar: the menu, filters where they apply, and status.
 
@@ -1630,7 +1700,7 @@ def sidebar(
     and the app version sit at the bottom.
 
     Args:
-        runs: All runs, with a ``status`` column.
+        runs: All runs, with a `status` column.
         groups: All collections.
         editor: Whether the visitor can edit.
         now: Current time.
@@ -1684,11 +1754,14 @@ def sidebar(
             f"{runs.height} runs · {n_active} active · scanned "
             f"{an.format_ago(last_scan, now)}"
         )
+
         if not editor:
             st.badge("Read-only", color="gray")
         left, right = st.columns(2)
+
         if left.button("Rescan", icon=":material/refresh:", width="stretch"):
             counts = run_scan()
+
             if counts is None:
                 st.toast("Another scan is running, try again in a moment.")
             else:
@@ -1723,6 +1796,7 @@ def auto_refresh() -> None:
     changed = counts and (
         counts["parsed"] or counts["new"] or counts["missing"]
     )
+
     if before is not None and changed:
         st.session_state.last_scan = time.time()
         st.rerun(scope="app")
@@ -1734,12 +1808,15 @@ def auto_refresh() -> None:
 
 
 def view_experiments(
-    data: dict, visible: pl.DataFrame, editor: bool, now: float
+    data: dict,
+    visible: pl.DataFrame,
+    editor: bool,
+    now: float,
 ) -> None:
     """Main table of runs with metric, hyperparameter and info columns.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         visible: Runs that pass the sidebar filters.
         editor: Whether the visitor can edit.
         now: Current time.
@@ -1795,6 +1872,7 @@ def view_experiments(
             return
         conn = db.connect(DB_PATH)
         chosen = st.session_state[metric_key]
+
         if group is not None:
             db.update_group(conn, group["id"], columns=chosen)
         else:
@@ -1804,13 +1882,13 @@ def view_experiments(
     widget_state(metric_key, options, saved)
     left, mid, right = st.columns([5, 4, 3])
     chosen = left.multiselect(
-        "Metrics",
+        "Scalars",
         options,
         key=metric_key,
         format_func=lambda t: f"{arrow(t, directions)}  ({counts[t]} runs)",
         on_change=save_metric_choice,
         help="Saved per collection. Set higher or lower is better, units "
-        "and decimals in Fields and settings → Metrics.",
+        "and decimals in Fields and settings → Scalars.",
     )
     hp_all = data["hparams"].filter(pl.col("id").is_in(ids))
     hp_names = [
@@ -1855,7 +1933,7 @@ def view_experiments(
         key="f_expr",
         placeholder="optimizer.lr < 1e-3 and val/acc > 0.9 and model ~ resnet",
         help="Terms joined by `and`. Operators: == != < <= > >= and ~ "
-        "(regex). Keys are hyperparameters, metric tags, or run, status, "
+        "(regex). Keys are hyperparameters, scalar tags, or run, status, "
         "steps.",
     )
     mode = right.segmented_control(
@@ -1867,6 +1945,7 @@ def view_experiments(
     )
 
     values = an.metric_table(metrics, ids, options, directions, mode.lower())
+
     if expr.strip():
         base = visible.select(
             "id",
@@ -1878,7 +1957,9 @@ def view_experiments(
         base = base.join(hp_all.select("id", *extra_hp), on="id", how="left")
         extra_metrics = [c for c in options if c not in base.columns]
         base = base.join(
-            values.select("id", *extra_metrics), on="id", how="left"
+            values.select("id", *extra_metrics),
+            on="id",
+            how="left",
         )
         for fld in defined:
             cell = [
@@ -1888,6 +1969,7 @@ def view_experiments(
             dtype = pl.Float64 if fld.is_number else pl.String
             # "prop:name" always works; plain "name" unless it's taken.
             keys = [PROP + fld.name]
+
             if fld.name not in base.columns:
                 keys.append(fld.name)
             base = base.with_columns(
@@ -1911,10 +1993,12 @@ def view_experiments(
         "compute": visible["compute_time"],
         "wall span": visible["wall_span"],
         "start": pl.Series(
-            to_local(visible["start_time"], tz), dtype=pl.Datetime
+            to_local(visible["start_time"], tz),
+            dtype=pl.Datetime,
         ),
         "last event": pl.Series(
-            to_local(visible["end_time"], tz), dtype=pl.Datetime
+            to_local(visible["end_time"], tz),
+            dtype=pl.Datetime,
         ),
         "size": visible["total_bytes"],
         "tags": visible["tags"],
@@ -1931,7 +2015,10 @@ def view_experiments(
     add_field_columns(columns, field_cols, [[by_id[i]] for i in ids])
     tag_of = {}
     ordered_values = order.join(
-        values, on="id", how="left", maintain_order="left"
+        values,
+        on="id",
+        how="left",
+        maintain_order="left",
     )
     for tag in chosen:
         tag_of[arrow(tag, directions)] = tag
@@ -1952,11 +2039,13 @@ def view_experiments(
     for col in ("compute", "wall span"):
         if col in table.columns:
             formats[col] = an.format_duration
+
     if "size" in table.columns:
         formats["size"] = an.format_bytes
     highlight = {
         label: best_rows(
-            table[label].to_list(), an.direction_of(tag, directions)
+            table[label].to_list(),
+            an.direction_of(tag, directions),
         )
         for label, tag in tag_of.items()
     }
@@ -1976,13 +2065,16 @@ def view_experiments(
             "★": st.column_config.TextColumn("★", width=30),
             "run": st.column_config.TextColumn("run", width="medium"),
             "steps": st.column_config.NumberColumn(
-                "steps", format="localized"
+                "steps",
+                format="localized",
             ),
             "start": st.column_config.DatetimeColumn(
-                "start", format="YYYY-MM-DD HH:mm"
+                "start",
+                format="YYYY-MM-DD HH:mm",
             ),
             "last event": st.column_config.DatetimeColumn(
-                "last event", format="YYYY-MM-DD HH:mm"
+                "last event",
+                format="YYYY-MM-DD HH:mm",
             ),
             **info_column_config(all_lists),
             **field_config(field_cols),
@@ -2021,7 +2113,7 @@ def view_experiments(
     )
     note = " (value at the step it was logged, not smoothed)"
     st.caption(
-        f"{table.height} runs · best value per metric highlighted"
+        f"{table.height} runs · best value per scalar highlighted"
         + (note if mode == "Best" else "")
         + ". Click rows to select them."
     )
@@ -2076,7 +2168,12 @@ def selection_actions(
             width="stretch",
         )
         tensorboard_button(
-            st, runs, settings, "exp", "TensorBoard", width="stretch"
+            st,
+            runs,
+            settings,
+            "exp",
+            "TensorBoard",
+            width="stretch",
         )
     bar.button(
         "Compare",
@@ -2086,11 +2183,14 @@ def selection_actions(
         args=("Compare",),
         kwargs={"compare_runs": selected, "cmp_source": "Selected runs"},
     )
+
     if not editor:
         return
     conn = db.connect(DB_PATH)
     with bar.popover(
-        "Add to collection", icon=":material/playlist_add:", disabled=none
+        "Add to collection",
+        icon=":material/playlist_add:",
+        disabled=none,
     ):
         choice = st.selectbox(
             "Existing collection",
@@ -2098,12 +2198,15 @@ def selection_actions(
             key="bulk_group",
         )
         new_name = st.text_input("…or new collection", key="bulk_new_group")
+
         if st.button("Add", type="primary"):
             name = new_name.strip() or (choice if choice != "—" else "")
+
             if name:
                 gid = db.create_group(conn, name)
                 db.add_to_group(conn, gid, selected)
                 st.rerun()
+
         if group is not None and st.button(f"Remove from {group['name']}"):
             db.remove_from_group(conn, group["id"], selected)
             st.rerun()
@@ -2115,27 +2218,35 @@ def selection_actions(
             list(by_name),
             key="bulk_prop",
             format_func=lambda n: by_name[n].label(
-                with_group=True, arrow=False
+                with_group=True,
+                arrow=False,
             ),
         )
+
         if name == fields.TAGS:
             bulk_tags(conn, selected, runs)
         else:
             fld = by_name[name]
             value = field_input(
-                fld, None, key=f"bulk_prop_value_{name}", label="Value"
+                fld,
+                None,
+                key=f"bulk_prop_value_{name}",
+                label="Value",
             )
             left, right = st.columns(2)
+
             if left.button("Set", type="primary", key="bulk_prop_set"):
                 try:
                     db.set_field(conn, selected, name, value)
                     st.rerun()
                 except ValueError as exc:
                     st.error(str(exc))
+
             if right.button("Clear", key="bulk_prop_clear"):
                 db.set_field(conn, selected, name, None)
                 st.rerun()
     all_starred = bool(runs) and all(r["starred"] for r in runs)
+
     if bar.button(
         "Unstar" if all_starred else "Star",
         icon=":material/star:",
@@ -2145,6 +2256,7 @@ def selection_actions(
         db.set_run_flag(conn, selected, "starred", 0 if all_starred else 1)
         st.rerun()
     all_archived = bool(runs) and all(r["archived"] for r in runs)
+
     if bar.button(
         "Unarchive" if all_archived else "Archive",
         icon=":material/archive:",
@@ -2171,12 +2283,15 @@ def bulk_tags(conn, selected: list[int], runs: list[dict]) -> None:
         accept_new_options=True,
         placeholder="Choose or type new tags",
     )
+
     if st.button("Add tags", type="primary", disabled=not new_tags):
         db.add_tags(conn, selected, new_tags)
         st.rerun()
     present = sorted({t for r in runs for t in r["tags"]})
+
     if present:
         drop = st.multiselect("Remove tags", present, key="bulk_untag")
+
         if st.button("Remove tags", disabled=not drop):
             db.remove_tags(conn, selected, drop)
             st.rerun()
@@ -2186,7 +2301,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     """Ablation view: one selection metric, other metrics at its best step.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         visible: Runs that pass the sidebar filters.
         editor: Whether the visitor can edit.
     """
@@ -2245,16 +2360,20 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     )
     show = [c for c in shown_cols if not c.startswith(PROP)]
     group = next((g for g in groups if g["name"] == source), None)
+
     if source == "Selected runs":
         pool = [by_id[i] for i in chosen_ids]
     elif group is not None:
         pool = [by_id[i] for i in group["members"] if i in by_id]
+
         if not st.session_state.filters["archived"]:
             pool = [r for r in pool if not r["archived"]]
+
         if group["description"]:
             st.caption(group["description"])
     else:
         pool = [by_id[i] for i in visible["id"]]
+
     if not pool:
         st.info(
             "This collection has no runs yet. Select runs in Experiments and "
@@ -2264,8 +2383,9 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     pool_ids = [r["id"] for r in pool]
 
     options = list(tag_counts(metrics, pool_ids))
+
     if not options:
-        st.info("These runs have no scalar metrics.")
+        st.info("These runs have no scalars.")
         return
     saved_sel = group["selection_metric"] if group else None
     sel_default = (
@@ -2274,14 +2394,15 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     c1, c2, c3 = st.columns([2, 3, 2])
     widget_state(f"sel_{source}", options, sel_default)
     sel = c1.selectbox(
-        "Selection metric",
+        "Selection scalar",
         options,
         key=f"sel_{source}",
         format_func=lambda t: arrow(t, directions),
-        help="The checkpoint (step) is chosen where this metric is best. "
-        "Other metrics are reported at that step, which avoids "
+        help="The checkpoint (step) is chosen where this scalar is best. "
+        "Other scalars are reported at that step, which avoids "
         "cherry-picking.",
     )
+
     if editor and group is not None and sel != saved_sel:
         conn = db.connect(DB_PATH)
         db.update_group(conn, group["id"], selection_metric=sel)
@@ -2295,13 +2416,14 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     report_options = [t for t in options if t != sel]
     widget_state(f"report_{source}", report_options, report_default)
     report = c2.multiselect(
-        "Metrics at that step",
+        "Scalars at that step",
         report_options,
         key=f"report_{source}",
         format_func=lambda t: arrow(t, directions),
     )
     aggregate = c3.toggle("Aggregate seeds", key=f"agg_{source}")
     key_mode, seed_regex = "name", settings["seed_regex"]
+
     if aggregate:
         a, b = st.columns([2, 3])
         widget_state(f"seeds_{source}", ["name", "hparams"], "name")
@@ -2315,9 +2437,11 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             }.get,
             horizontal=True,
         )
+
         if key_mode == "name":
             seed_regex = b.text_input(
-                "Seed pattern (regex)", value=settings["seed_regex"]
+                "Seed pattern (regex)",
+                value=settings["seed_regex"],
             )
 
     def config_of(run: dict) -> str:
@@ -2337,7 +2461,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         key=f"base_{source}",
         help="Numbers show their difference to this "
         f"{'config' if aggregate else 'run'} in brackets: green is better "
-        "and orange is worse, following the metric's direction.",
+        "and orange is worse, following the scalar's direction.",
     )
     # The address bar keeps these choices, so the URL reopens them.
     link = {
@@ -2367,6 +2491,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     rows = []
     for run in pool:
         m = sel_rows.get(run["id"])
+
         if m is None:
             continue
         step = an.best_step(m, direction)
@@ -2382,6 +2507,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         row["config"] = config_of(run)
         rows.append(row)
     conn.close()
+
     if not rows:
         st.info(f"None of these runs logged {sel}.")
         return
@@ -2417,12 +2543,15 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             {col: [info_value(col, ms) for ms in members] for col in show}
         )
         field_cols = field_columns(
-            shown_cols, data["fields"], {*columns, *labels.values()}
+            shown_cols,
+            data["fields"],
+            {*columns, *labels.values()},
         )
         add_field_columns(columns, field_cols, members)
         highlight, changes = {}, {}
         configs = stats["config"].to_list()
         base_row = configs.index(baseline) if baseline in configs else None
+
         if base_row is not None:
             columns["config"] = mark_baseline(configs, base_row)
         for c in value_cols:
@@ -2435,6 +2564,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
                 f"{fmt(m)} ± {spread(s)}" if m is not None else ""
                 for m, s in zip(means, stds)
             ]
+
             if base_row is not None:
                 columns[labels[c]], changes[labels[c]] = with_changes(
                     columns[labels[c]],
@@ -2443,7 +2573,8 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
                     an.direction_of(c, directions),
                 )
             highlight[labels[c]] = best_rows(
-                means, an.direction_of(c, directions)
+                means,
+                an.direction_of(c, directions),
             )
         shown = pl.DataFrame(columns)
         chart = {
@@ -2462,7 +2593,7 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         )
         st.caption(
             f"Mean ± std over seeds of {sel} at its best step, and the "
-            "other metrics at that same step."
+            "other scalars at that same step."
         )
         export = shown
         best_ids = stats["id"][0].to_list() if stats.height else []
@@ -2484,10 +2615,12 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         names = df["run"].to_list()
         base_row = names.index(baseline) if baseline in names else None
         changes = {}
+
         if base_row is not None:
             columns["run"] = mark_baseline(names, base_row)
         for c in value_cols:
             columns[labels[c]] = df[c]
+
             if base_row is not None:
                 # The cells become text: the value, then the difference.
                 values = df[c].to_list()
@@ -2500,7 +2633,8 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         shown = pl.DataFrame(columns)
         highlight = {
             labels[c]: best_rows(
-                df[c].to_list(), an.direction_of(c, directions)
+                df[c].to_list(),
+                an.direction_of(c, directions),
             )
             for c in value_cols
         }
@@ -2521,12 +2655,13 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
             },
         )
         st.caption(
-            "Other metrics use the logged step closest to the best step "
+            "Other scalars use the logged step closest to the best step "
             f"of {sel}."
         )
         export = shown.with_columns(
             pl.col(labels[c]).map_elements(
-                an.format_value, return_dtype=pl.String
+                an.format_value,
+                return_dtype=pl.String,
             )
             for c in value_cols
             if not changes
@@ -2605,7 +2740,10 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
     latex = an.to_latex(export, bold)
     bar = toolbar()
     tensorboard_button(
-        bar, [by_id[i] for i in df["id"]], data["settings"], "cmp"
+        bar,
+        [by_id[i] for i in df["id"]],
+        data["settings"],
+        "cmp",
     )
     with bar.popover("LaTeX source", icon=":material/code:"):
         st.code(latex, language="latex")
@@ -2653,7 +2791,10 @@ def mark_baseline(labels: list[str], base_row: int) -> list[str]:
 
 
 def with_changes(
-    texts: list[str], values: list, base_row: int, direction: str
+    texts: list[str],
+    values: list,
+    base_row: int,
+    direction: str,
 ) -> tuple[list[str], list[str]]:
     """Add each value's difference to the baseline's, in brackets.
 
@@ -2661,7 +2802,7 @@ def with_changes(
         texts: The cells as shown, in table order.
         values: The numbers behind them (means when seeds are aggregated).
         base_row: Position of the baseline.
-        direction: The metric's direction, ``"max"`` or ``"min"``.
+        direction: The metric's direction, `"max"` or `"min"`.
 
     Returns:
         The new cells, and the CSS of each cell: green when the difference
@@ -2672,6 +2813,7 @@ def with_changes(
         diff = (
             None if i == base_row else an.change_from(value, values[base_row])
         )
+
         if diff is None:
             cells.append(text)
             css.append("")
@@ -2683,13 +2825,15 @@ def with_changes(
 
 
 def compare_hparams(
-    hparams: pl.DataFrame, df: pl.DataFrame, best_ids: list[int]
+    hparams: pl.DataFrame,
+    df: pl.DataFrame,
+    best_ids: list[int],
 ) -> None:
     """Show the hyperparameters that differ between the compared runs.
 
     Args:
         hparams: Wide hyperparameter table of all runs.
-        df: The compared runs (``id`` and ``run``), best first.
+        df: The compared runs (`id` and `run`), best first.
         best_ids: The best run (cells that differ from it are marked).
     """
     order = df.select("id", "run")
@@ -2700,6 +2844,7 @@ def compare_hparams(
         *[c for c in hp.columns[2:] if hp[c].null_count() < hp.height],
     )
     varying = an.varying_columns(hp, exclude=("id", "run"))
+
     if not varying or not best_ids:
         return
     st.markdown("**What differs between these runs**")
@@ -2715,13 +2860,17 @@ def compare_hparams(
         c: {i for i, v in enumerate(diff[c]) if v != best[c]} for c in varying
     }
     show_table(
-        styled(diff, highlight, css=cell_css("differ")), hide_index=True
+        styled(diff, highlight, css=cell_css("differ")),
+        hide_index=True,
     )
     st.caption(f"Highlighted: differs from the best run ({best['run']}).")
 
 
 def parameter_explorer(
-    data: dict, df: pl.DataFrame, targets: list[str], directions: dict
+    data: dict,
+    df: pl.DataFrame,
+    targets: list[str],
+    directions: dict,
 ) -> None:
     """Show which settings lead to the best value of a target metric.
 
@@ -2731,8 +2880,8 @@ def parameter_explorer(
     against each setting.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
-        df: The compared runs: ``id``, ``run`` and one column per metric
+        data: Output of :func:`load_data`, plus `by_id`.
+        df: The compared runs: `id`, `run` and one column per metric
             (the selection metric at its best step, the others at that
             step).
         targets: Metrics that can be the target, the selection metric
@@ -2741,7 +2890,10 @@ def parameter_explorer(
     """
     by_id = data["by_id"]
     hp = df.select("id").join(
-        data["hparams"], on="id", how="left", maintain_order="left"
+        data["hparams"],
+        on="id",
+        how="left",
+        maintain_order="left",
     )
     hp_cols = [
         c for c in hp.columns if c != "id" and hp[c].null_count() < hp.height
@@ -2758,6 +2910,7 @@ def parameter_explorer(
         if any(v is not None for v in values)
     }
     options = [*hp_cols, *(PROP + name for name in prop_values)]
+
     if not options:
         return
     varying = an.varying_columns(hp.select(hp_cols), exclude=())
@@ -2771,11 +2924,11 @@ def parameter_explorer(
     left, right = st.columns([1, 3])
     widget_state("px_target", targets, targets[0])
     target = left.selectbox(
-        "Target metric",
+        "Target scalar",
         targets,
         key="px_target",
         format_func=lambda t: arrow(t, directions),
-        help="The selection metric at its best step, or another metric "
+        help="The selection scalar at its best step, or another scalar "
         "at that step.",
     )
     widget_state("px_dims", options, default or options[:4])
@@ -2787,15 +2940,17 @@ def parameter_explorer(
         help="Hyperparameters and fields to plot, in this order.",
     )
     st.caption(
-        "One line per run, from its settings to the target metric. Drag "
+        "One line per run, from its settings to the target scalar. Drag "
         "along an axis to keep only the runs in that range; drag an axis "
         "name to reorder."
     )
+
     if not dims:
         st.info("Choose at least one setting.")
         return
 
     keep = [i for i, v in enumerate(df[target].to_list()) if v is not None]
+
     if len(keep) < 2:
         st.info(f"Fewer than two runs logged {target}.")
         return
@@ -2821,7 +2976,11 @@ def parameter_explorer(
 
 
 def straight_lines(
-    axes: dict, scores: list, target: str, scale: list, lower: bool
+    axes: dict,
+    scores: list,
+    target: str,
+    scale: list,
+    lower: bool,
 ) -> None:
     """Draw the explorer's parallel coordinates plot, which can be filtered.
 
@@ -2839,9 +2998,11 @@ def straight_lines(
             "label": show_label(dim),
             "values": axis["positions"],
         }
+
         if axis["tickvals"]:
             spec["tickvals"] = axis["tickvals"]
             spec["ticktext"] = axis["ticktext"]
+
         if axis["kind"] == "category":
             spec["range"] = [-0.3, len(axis["tickvals"]) - 0.7]
         dimensions.append(spec)
@@ -2900,6 +3061,7 @@ def scatter_grid(
     for n, axis in enumerate(axes.values()):
         row, col = n // cols + 1, n % cols + 1
         x = axis["positions"]
+
         if axis["kind"] == "category":
             # A small, fixed jitter so runs with the same value stay apart.
             x = [p + 0.12 * ((k % 5) - 2) / 2 for k, p in enumerate(x)]
@@ -2932,8 +3094,10 @@ def scatter_grid(
             col=col,
         )
         xaxis = {"zeroline": False}
+
         if axis["tickvals"]:
             xaxis.update(tickvals=axis["tickvals"], ticktext=axis["ticktext"])
+
         if axis["kind"] == "category":
             xaxis["range"] = [-0.6, len(axis["tickvals"]) - 0.4]
         grid.update_xaxes(row=row, col=col, **xaxis)
@@ -2963,6 +3127,7 @@ def open_tensorboard(runs: list[dict], settings: dict) -> None:
         for r in runs
         if not r["missing"]
     }
+
     if not folders:
         st.session_state.tb_error = "None of these run folders exist."
         return
@@ -2996,7 +3161,7 @@ def tensorboard_button(
         key: Unique suffix for the widget key.
         label: Button text; "Open in TensorBoard" by default.
         disabled: Show the button greyed out (nothing to open yet).
-        width: ``"content"`` or ``"stretch"``, as for ``st.button``.
+        width: `"content"` or `"stretch"`, as for `st.button`.
     """
     where.button(
         label or "Open in TensorBoard",
@@ -3015,6 +3180,7 @@ def tensorboard_button(
 def tensorboard_panel() -> None:
     """List the TensorBoards started from the app, with links and Stop."""
     error = st.session_state.pop("tb_error", None)
+
     if error:
         st.error(error)
     opened = st.session_state.pop("tb_opened", None)
@@ -3023,6 +3189,7 @@ def tensorboard_panel() -> None:
         if inst.id == opened and not inst.ready():
             with st.spinner("Starting TensorBoard…"):
                 ok = tbview.wait_ready(inst)
+
             if not ok:
                 st.error(
                     "TensorBoard didn't start. Its last output:\n\n"
@@ -3056,6 +3223,7 @@ def tensorboard_panel() -> None:
             on_click=tbview.stop,
             args=(inst.id,),
         )
+
     if instances:
         port = instances[-1].port
         st.caption(
@@ -3071,7 +3239,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
     """Overlay the training curves of up to eight runs.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         candidates: Runs to choose from (every run that isn't
             archived; the sidebar filters don't apply here).
     """
@@ -3088,6 +3256,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
         for i in st.session_state.get("curve_runs", [])
         if i in by_id and i not in pool
     ]
+
     if not pool:
         st.info("No runs to plot.")
         return
@@ -3102,7 +3271,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
     options = list(tag_counts(metrics, chosen_runs or pool))
     widget_state("curve_metrics", options, default_metrics(options, 4))
     tags = st.multiselect(
-        "Metrics",
+        "Scalars",
         options,
         key="curve_metrics",
         format_func=lambda t: arrow(t, directions),
@@ -3116,8 +3285,9 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
         required=True,
     )
     log_y = c3.toggle("Log y")
+
     if not chosen_runs or not tags:
-        st.info("Pick at least one run and one metric.")
+        st.info("Pick at least one run and one scalar.")
         return
 
     colors = run_colors(chosen_runs)
@@ -3127,6 +3297,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
         fig = go.Figure()
         for rid in chosen_runs:
             series = db.load_series(conn, rid, tag)
+
             if series.is_empty():
                 continue
             name = by_id[rid]["name"]
@@ -3164,7 +3335,7 @@ def overlay_section(
 
     Args:
         conn: Open database connection.
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         run_ids: Runs to plot.
         options: Metrics the runs logged.
         smoothing: EMA weight from the Smoothing slider.
@@ -3172,31 +3343,32 @@ def overlay_section(
         log_y: Whether the y axis is logarithmic.
     """
     directions, by_id = data["directions"], data["by_id"]
-    st.markdown("#### Overlay metrics")
+    st.markdown("#### Overlay scalars")
     st.caption(
-        "Several metrics on one chart, for metrics on the same scale "
+        "Several scalars on one chart, for scalars on the same scale "
         "(train and validation loss, or accuracies on different splits)."
     )
     widget_state("overlay_metrics", options, an.overlay_default(options))
     c1, c2 = st.columns([5, 2])
     tags = c1.multiselect(
-        "Metrics to overlay",
+        "Scalars to overlay",
         options,
         key="overlay_metrics",
         max_selections=len(DASHES),
         format_func=lambda t: arrow(t, directions),
-        placeholder="Choose two or more metrics",
+        placeholder="Choose two or more scalars",
     )
     color_by = c2.segmented_control(
         "Color by",
-        ["Run", "Metric"],
-        default="Metric" if len(run_ids) == 1 else "Run",
+        ["Run", "Scalar"],
+        default="Scalar" if len(run_ids) == 1 else "Run",
         required=True,
         key="overlay_color_by",
         help="The other one is told apart by the line style.",
     )
+
     if not tags:
-        st.info("Choose the metrics to draw on one chart.")
+        st.info("Choose the scalars to draw on one chart.")
         return
     run_colors_ = run_colors(run_ids)
     metric_colors = dict(zip(tags, palette()))
@@ -3207,8 +3379,10 @@ def overlay_section(
         run = by_id[rid]
         for j, tag in enumerate(tags):
             series = db.load_series(conn, rid, tag)
+
             if series.is_empty():
                 continue
+
             if color_by == "Run":
                 color, dash = run_colors_[rid], DASHES[j]
             else:
@@ -3233,13 +3407,14 @@ def curve_x(series: pl.DataFrame, run: dict, x_mode: str, tz):
     """Return the x values of a curve for the chosen X axis.
 
     Args:
-        series: ``step``, ``value`` and ``wall_time`` of one metric.
+        series: `step`, `value` and `wall_time` of one metric.
         run: The run the series belongs to.
-        x_mode: ``"Step"``, ``"Hours since start"`` or ``"Wall time"``.
+        x_mode: `"Step"`, `"Hours since start"` or `"Wall time"`.
         tz: Viewer time zone, for wall time.
     """
     if x_mode == "Step":
         return series["step"].to_numpy()
+
     if x_mode == "Hours since start":
         start = run["start_time"] or 0.0
         return (series["wall_time"].to_numpy() - start) / 3600
@@ -3261,7 +3436,7 @@ def add_curve(
     Args:
         fig: Figure to draw on.
         x: X values, from :func:`curve_x`.
-        series: ``step`` and ``value`` of the metric.
+        series: `step` and `value` of the metric.
         smoothing: EMA weight; 0 draws the raw data only.
         color: Line color.
         name: Legend entry.
@@ -3270,6 +3445,7 @@ def add_curve(
     """
     steps = series["step"].to_numpy()
     values = series["value"].to_numpy()
+
     if smoothing > 0:
         fig.add_trace(
             go.Scatter(
@@ -3300,7 +3476,11 @@ def add_curve(
 
 
 def style_curves(
-    fig: go.Figure, title: str, x_mode: str, log_y: bool, height: int = 340
+    fig: go.Figure,
+    title: str,
+    x_mode: str,
+    log_y: bool,
+    height: int = 340,
 ) -> None:
     """Apply the shared layout of the Curves charts.
 
@@ -3319,6 +3499,7 @@ def style_curves(
         legend={"orientation": "h", "y": -0.2},
         xaxis_title=None if x_mode == "Wall time" else x_mode.lower(),
     )
+
     if log_y:
         fig.update_yaxes(type="log")
 
@@ -3327,7 +3508,7 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
     """Gantt timeline of when runs ran, plus a compute calendar.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         visible: Runs that pass the sidebar filters.
         now: Current time.
     """
@@ -3355,21 +3536,27 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
     group_order = [
         g["name"] for g in sorted(data["groups"], key=lambda g: g["id"])
     ]
-    tag_order = sorted(
-        {t for tags in data["runs"]["tags"].to_list() for t in tags}
+    # Tags keep the order, and so the colors, set in Fields and settings.
+    # A run with several tags is drawn in the color of the first one.
+    tag_order = info_value(
+        "tags",
+        [{"tags": t} for t in data["runs"]["tags"].to_list()],
     )
     rows = []
     for rid in visible["id"]:
         run = by_id[rid]
+        run_tags = info_value("tags", [run])
+
         if color_by == "Collection":
             ranked = sorted(run["groups"], key=group_order.index)
             label = ranked[0] if ranked else "No collection"
         elif color_by == "Tag":
-            label = run["tags"][0] if run["tags"] else "Untagged"
+            label = run_tags[0] if run_tags else "Untagged"
         else:
             label = run["status"]
         # One continuous bar from the first to the last event of the run.
         start, end = run["start_time"], run["end_time"]
+
         if start is None or end < start_limit:
             continue
         shown_start = max(start, start_limit)
@@ -3383,8 +3570,10 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
                 "span": an.format_duration(run["wall_span"]),
                 "compute": an.format_duration(run["compute_time"]),
                 "status": run["status"],
+                "tags": ", ".join(run_tags) or "no tags",
             }
         )
+
     if not rows:
         st.info("No run activity in this range.")
         return
@@ -3394,10 +3583,11 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
     )
     order = df.sort("start")["run"].unique(maintain_order=True).to_list()
     labels = sorted(df["label"].unique().to_list())
+
     if color_by == "Status":
         cmap = {lab: STATUS_COLOR.get(lab, OTHER_COLOR) for lab in labels}
     else:
-        stable = group_order if color_by == "Group" else tag_order
+        stable = group_order if color_by == "Collection" else tag_order
         cmap = label_colors(labels, stable)
         for lab in ("No collection", "Untagged"):
             if lab in cmap:
@@ -3411,12 +3601,13 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         color="label",
         color_discrete_map=cmap,
         category_orders={"run": order},
-        custom_data=["run_id", "span", "compute", "status"],
+        custom_data=["run_id", "span", "compute", "status", "tags"],
     )
     fig.update_traces(
         hovertemplate="<b>%{y}</b><br>%{base|%b %d %H:%M} → "
         "%{x|%b %d %H:%M}<br>span %{customdata[1]} · compute "
-        "%{customdata[2]} · %{customdata[3]}<extra></extra>",
+        "%{customdata[2]} · %{customdata[3]}<br>tags: %{customdata[4]}"
+        "<extra></extra>",
         marker={"cornerradius": 4},
     )
     fig.add_vline(
@@ -3439,9 +3630,14 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         bargap=0.3,
     )
     event = report_chart(
-        fig, "timeline", "timeline", on_select="rerun", selection_mode="points"
+        fig,
+        "timeline",
+        "timeline",
+        on_select="rerun",
+        selection_mode="points",
     )
     points = event.selection.get("points", []) if event else []
+
     if points:
         rid = int(points[0]["customdata"][0])
         st.button(
@@ -3506,7 +3702,9 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         border=True,
     )
     c4.metric(
-        "Running now", sum(r["status"] == "Active" for r in rows), border=True
+        "Running now",
+        sum(r["status"] == "Active" for r in rows),
+        border=True,
     )
     st.caption(
         "Times are shown in your time zone and come from the clock of the "
@@ -3527,6 +3725,7 @@ def compute_calendar(hours: dict, now: float, days: int | None, tz):
         A plotly Figure.
     """
     today = datetime.fromtimestamp(now, tz).date()
+
     if days:
         first = today - timedelta(days=days - 1)
     else:
@@ -3576,12 +3775,15 @@ def compute_calendar(hours: dict, now: float, days: int | None, tz):
 
 
 def view_run_details(
-    data: dict, candidates: pl.DataFrame, editor: bool, now: float
+    data: dict,
+    candidates: pl.DataFrame,
+    editor: bool,
+    now: float,
 ) -> None:
     """Everything about one run: timing, annotations, metrics and files.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         candidates: Runs to choose from (every run that isn't
             archived; the sidebar filters don't apply here).
         editor: Whether the visitor can edit.
@@ -3597,8 +3799,10 @@ def view_run_details(
     newest = candidates.sort("start_time", descending=True, nulls_last=True)
     options = newest["id"].to_list()
     current = st.session_state.get("run_id")
+
     if current in by_id and current not in options:
         options.insert(0, current)
+
     if not options:
         st.info("No runs match the filters.")
         return
@@ -3613,12 +3817,15 @@ def view_run_details(
     # values are in the Overview tab.
     status_color = {"Active": "green", "Stopped": "gray", "Missing": "red"}
     items = [(html.escape(run["status"]), status_color[run["status"]])]
+
     if run["starred"]:
         items.append(("★ starred", "orange"))
+
     if run["archived"]:
         items.append(("archived", "gray"))
     # Collections take the primary color, so they never look like a tag.
     items += [(html.escape(g), "primary") for g in run["groups"]]
+
     if run["has_nonfinite"]:
         items.append(("NaN/inf logged", "red"))
     tag_colors = tags_field().option_colors()
@@ -3649,6 +3856,7 @@ def view_run_details(
     )
     tensorboard_button(actions, [run], settings, "run", "TensorBoard")
     editing = editor and st.session_state.get("editing_run") == rid
+
     if editor and not editing:
         actions.button(
             "Edit",
@@ -3657,16 +3865,19 @@ def view_run_details(
             on_click=st.session_state.update,
             kwargs={"editing_run": rid},
         )
+
     if editing:
         # The editor takes the place of the page.
         annotation_form(run, groups, data["fields"])
         return
+
     if run["notes"]:
         note = run["notes"].strip().replace("\n", " ")
         st.markdown(f":material/sticky_note_2: {note}")
     elif editor:
         st.caption("No notes yet. Use Edit to add tags, notes and fields.")
     tensorboard_panel()
+
     if run["parse_error"]:
         st.warning(
             f"Some event data could not be read:\n\n{run['parse_error']}"
@@ -3674,7 +3885,9 @@ def view_run_details(
 
     c = st.columns(6)
     c[0].metric(
-        "Compute time", an.format_duration(run["compute_time"]), border=True
+        "Compute time",
+        an.format_duration(run["compute_time"]),
+        border=True,
     )
     c[1].metric(
         "Wall span",
@@ -3710,7 +3923,7 @@ def view_run_details(
         [
             "Overview",
             "Artifacts",
-            "Metrics",
+            "Scalars",
             "Hyperparameters",
             "Text",
             "Timing",
@@ -3724,23 +3937,7 @@ def view_run_details(
         metrics_tab(metrics.filter(pl.col("run_id") == rid), run, directions)
         st.code(f'tensorboard --logdir "{run_dir}"', language="bash")
     with tabs[3]:
-        hp = run["hparams"]
-        if hp:
-            show_table(
-                pl.DataFrame(
-                    {
-                        "key": list(hp),
-                        "value": [format_hparam(v) for v in hp.values()],
-                    }
-                ),
-                hide_index=True,
-            )
-            st.caption("Sources: " + ", ".join(run["hparam_sources"]))
-        else:
-            st.info(
-                "No hyperparameters found in the events or in config files "
-                "(config.yaml, hparams.yaml, args.json, …)."
-            )
+        hparams_tab(run, by_id)
     with tabs[4]:
         if run["texts"]:
             for tag, text in run["texts"].items():
@@ -3751,6 +3948,7 @@ def view_run_details(
             st.info("No text summaries.")
     with tabs[5]:
         segments = run["segments"]
+
         if segments:
             starts = [s for s, _ in segments]
             ends = [e for _, e in segments]
@@ -3775,6 +3973,150 @@ def view_run_details(
         )
 
 
+def config_paths(run: dict) -> list[str]:
+    """Return the config files of a run, its main config file first.
+
+    Args:
+        run: The run, as a dict.
+
+    Returns:
+        Paths inside the run of the config files that were read.
+    """
+    return [s for s in run["hparam_sources"] if s != "event hparams"]
+
+
+def text_diff(
+    run: dict,
+    rel: str,
+    other: dict,
+    other_rel: str,
+) -> None:
+    """Show the line-by-line difference between two text files.
+
+    Args:
+        run: The run of the file shown on the page.
+        rel: That file's path inside its run.
+        other: The run to compare with.
+        other_rel: The other file's path inside its run.
+    """
+    path = safe_file(ROOT / run["path"], rel)
+    other_path = safe_file(ROOT / other["path"], other_rel)
+    text = read_text(path) if path else None
+    other_text = read_text(other_path) if other_path else None
+
+    if text is None or other_text is None:
+        st.info("One of the files is binary or unreadable.")
+        return
+    diff = "".join(
+        difflib.unified_diff(
+            other_text.splitlines(keepends=True),
+            text.splitlines(keepends=True),
+            fromfile=f"{other['name']}/{other_rel}",
+            tofile=f"{run['name']}/{rel}",
+        )
+    )
+    st.code(diff or "Files are identical.", language="diff")
+
+
+def hparams_tab(run: dict, by_id: dict) -> None:
+    """The hyperparameters of a run, and how they differ from another's.
+
+    Args:
+        run: The run, as a dict.
+        by_id: Every run as a dict.
+    """
+    hp = run["hparams"]
+
+    if not hp:
+        st.info(
+            "No hyperparameters found in the events or in config files. "
+            "The names of config files are set in Fields and settings → "
+            "Settings."
+        )
+        return
+    show_table(
+        pl.DataFrame(
+            {
+                "key": list(hp),
+                "value": [format_hparam(v) for v in hp.values()],
+            }
+        ),
+        hide_index=True,
+    )
+    configs = config_paths(run)
+    st.caption(
+        "Sources: "
+        + ", ".join(run["hparam_sources"])
+        + (f". Main config file: `{configs[0]}`." if configs else ".")
+    )
+    others = [
+        i
+        for i, r in sorted(by_id.items(), key=lambda item: item[1]["name"])
+        if i != run["id"] and r["hparams"]
+    ]
+
+    if not others:
+        return
+    st.markdown("**Compare with another run**")
+    other_id = st.selectbox(
+        "Run to compare with",
+        [None, *others],
+        format_func=lambda i: "—" if i is None else by_id[i]["name"],
+        key=f"hp_diff_{run['id']}",
+    )
+
+    if other_id is None:
+        return
+    other = by_id[other_id]
+    keys = list(dict.fromkeys([*hp, *other["hparams"]]))
+    changed = [
+        k
+        for k in keys
+        if format_hparam(hp.get(k)) != format_hparam(other["hparams"].get(k))
+    ]
+
+    if changed:
+        show_table(
+            pl.DataFrame(
+                {
+                    "key": changed,
+                    other["name"]: [
+                        format_hparam(other["hparams"].get(k)) for k in changed
+                    ],
+                    run["name"]: [format_hparam(hp.get(k)) for k in changed],
+                }
+            ),
+            hide_index=True,
+        )
+        st.caption(
+            f"{len(changed)} of {len(keys)} hyperparameters differ. Values "
+            "are compared after reading the files, so the file names, "
+            "formats and the order of the keys don't matter."
+        )
+    else:
+        st.success("Every hyperparameter is the same.")
+    other_configs = config_paths(other)
+
+    if not configs or not other_configs:
+        return
+    with st.expander("Line-by-line difference of the config files"):
+        pick, other_pick = configs[0], other_configs[0]
+
+        if len(configs) > 1 or len(other_configs) > 1:
+            left, right = st.columns(2)
+            other_pick = left.selectbox(
+                f"File of {other['name']}",
+                other_configs,
+                key=f"hp_diff_file_{run['id']}_{other_id}",
+            )
+            pick = right.selectbox(
+                f"File of {run['name']}",
+                configs,
+                key=f"hp_diff_own_{run['id']}",
+            )
+        text_diff(run, pick, other, other_pick)
+
+
 def overview_tab(run: dict, data: dict) -> None:
     """Field values grouped in cards, one per field group.
 
@@ -3783,6 +4125,7 @@ def overview_tab(run: dict, data: dict) -> None:
         data: Output of :func:`load_data`.
     """
     defined = data["fields"]
+
     if not defined:
         st.info(
             "No fields yet. Add fields such as the dataset or the GPU in "
@@ -3800,11 +4143,13 @@ def overview_tab(run: dict, data: dict) -> None:
                 for f in members
                 if show_empty or f.name in run["fields"]
             ]
+
             if not pairs:
                 continue
             shown_any = True
             with card(group or "General"):
                 key_values(pairs)
+
         if not shown_any:
             st.caption(
                 "This run has no field values yet. Use Edit to set them, or "
@@ -3817,7 +4162,7 @@ def overview_tab(run: dict, data: dict) -> None:
                 pl.DataFrame(
                     {
                         "Collection": [g["name"] for g in collections],
-                        "Selection metric": [
+                        "Selection scalar": [
                             g["selection_metric"] or "" for g in collections
                         ],
                         "Description": [g["description"] for g in collections],
@@ -3853,6 +4198,7 @@ def render_add_field(bar) -> None:
                 help="Only for number fields.",
             )
             unit = st.text_input("Unit", placeholder="for example %, ms, M")
+
             if st.form_submit_button("Add field", type="primary"):
                 conn = db.connect(DB_PATH)
                 try:
@@ -3877,7 +4223,9 @@ def render_add_field(bar) -> None:
 
 
 def annotation_form(
-    run: dict, groups: list[dict], defined: list[Field]
+    run: dict,
+    groups: list[dict],
+    defined: list[Field],
 ) -> None:
     """Edit a run's fields, tags, collections, flags and notes.
 
@@ -3916,7 +4264,9 @@ def annotation_form(
                     )
                     with cells[k % 3]:
                         values[fld.name] = field_input(
-                            fld, current, key=f"prop_{rid}_{fld.name}"
+                            fld,
+                            current,
+                            key=f"prop_{rid}_{fld.name}",
                         )
         with card("Collections"):
             cells = st.columns(3)
@@ -3928,7 +4278,8 @@ def annotation_form(
                 placeholder="Not in a collection",
             )
             new_group = cells[1].text_input(
-                "New collection", placeholder="Name of a new collection"
+                "New collection",
+                placeholder="Name of a new collection",
             )
             with cells[2]:
                 starred = st.checkbox("Starred", value=bool(run["starred"]))
@@ -3947,8 +4298,11 @@ def annotation_form(
             "Markdown is supported.",
         )
         submitted = st.form_submit_button(
-            "Save changes", type="primary", icon=":material/save:"
+            "Save changes",
+            type="primary",
+            icon=":material/save:",
         )
+
     if not submitted:
         return
     tags = values.pop(fields.TAGS)
@@ -3960,6 +4314,7 @@ def annotation_form(
         st.error(str(exc))
         conn.close()
         return
+
     if new_group.strip():
         group_ids.append(db.create_group(conn, new_group))
     db.set_field(conn, [rid], fields.TAGS, tags)
@@ -3981,7 +4336,7 @@ def metrics_tab(metrics: pl.DataFrame, run: dict, directions: dict) -> None:
         directions: User-set directions.
     """
     if metrics.is_empty():
-        st.info("No scalar metrics.")
+        st.info("No scalars logged.")
         return
     rows = []
     for m in metrics.sort("tag").iter_rows(named=True):
@@ -4005,6 +4360,7 @@ def metrics_tab(metrics: pl.DataFrame, run: dict, directions: dict) -> None:
     # metric, which is its tag up to the last "/" unless set there.
     table = pl.DataFrame(rows).sort("group", "tag")
     show_table(table, hide_index=True)
+
     if run["other_tags"]:
         found = ", ".join(
             f"{n} {plugin} tag(s)" for plugin, n in run["other_tags"].items()
@@ -4013,7 +4369,11 @@ def metrics_tab(metrics: pl.DataFrame, run: dict, directions: dict) -> None:
 
 
 def artifacts_tab(
-    run: dict, run_dir: Path, by_id: dict, settings: dict, tz
+    run: dict,
+    run_dir: Path,
+    by_id: dict,
+    settings: dict,
+    tz,
 ) -> None:
     """File browser for one run: preview, download, zip and diff.
 
@@ -4028,20 +4388,25 @@ def artifacts_tab(
         st.warning("The run folder no longer exists.")
         return
     files = list_artifacts(run_dir)
+
     if files.is_empty():
         st.info("This run has only event files.")
         return
     left, right = st.columns([3, 1])
     needle = left.text_input(
-        "Filter files", key="art_filter", placeholder="checkpoints/ or .png"
+        "Filter files",
+        key="art_filter",
+        placeholder="checkpoints/ or .png",
     )
     hide_ckpt = right.toggle("Hide checkpoints", key="art_hide_ckpt")
+
     if needle:
         files = files.filter(
             pl.col("path")
             .str.to_lowercase()
             .str.contains(needle.lower(), literal=True)
         )
+
     if hide_ckpt:
         files = files.filter(~pl.col("path").str.contains(CHECKPOINT_PATTERN))
     st.caption(
@@ -4061,12 +4426,14 @@ def artifacts_tab(
         height=table_height(shown.height, 423),
         column_config={
             "modified": st.column_config.DatetimeColumn(
-                "modified", format="YYYY-MM-DD HH:mm"
+                "modified",
+                format="YYYY-MM-DD HH:mm",
             )
         },
     )
     rows = [r for r in event.selection.rows if r < files.height]
     bar = toolbar()
+
     if not rows:
         bar.markdown("**0 selected**", width="content")
         bar.caption(
@@ -4079,6 +4446,7 @@ def artifacts_tab(
 
     if picked.height > 1:
         size = picked["size"].sum()
+
         if size > settings["max_zip_mb"] * 1024**2:
             bar.caption(
                 f"The selection is {an.format_bytes(size)}, above the "
@@ -4090,10 +4458,14 @@ def artifacts_tab(
         def build_zip() -> bytes:
             buf = io.BytesIO()
             with zipfile.ZipFile(
-                buf, "w", zipfile.ZIP_DEFLATED, compresslevel=1
+                buf,
+                "w",
+                zipfile.ZIP_DEFLATED,
+                compresslevel=1,
             ) as zf:
                 for rel in picked["path"]:
                     path = safe_file(run_dir, rel)
+
                     if path is not None:
                         zf.write(path, arcname=f"{folder}/{rel}")
             return buf.getvalue()
@@ -4109,6 +4481,7 @@ def artifacts_tab(
 
     rel = picked["path"][0]
     path = safe_file(run_dir, rel)
+
     if path is None:
         bar.caption(
             "This file is outside the runs folder (e.g. a symlink) and "
@@ -4126,7 +4499,11 @@ def artifacts_tab(
 
 
 def preview_file(
-    path: Path, rel: str, size: int, run: dict, by_id: dict
+    path: Path,
+    rel: str,
+    size: int,
+    run: dict,
+    by_id: dict,
 ) -> None:
     """Show a file: image, audio, video, table, or text with a diff.
 
@@ -4138,15 +4515,19 @@ def preview_file(
         by_id: Every run as a dict (for the diff).
     """
     suffix = path.suffix.lower()
+
     if suffix in IMAGE_EXT:
         st.image(str(path))
         return
+
     if suffix in AUDIO_EXT:
         st.audio(str(path))
         return
+
     if suffix in VIDEO_EXT:
         st.video(str(path))
         return
+
     if suffix in TABLE_EXT:
         try:
             st.dataframe(
@@ -4162,43 +4543,49 @@ def preview_file(
             st.error(f"Can't read as a table: {exc}")
         return
     text = read_text(path)
+
     if text is None:
         st.info("Binary file. Download it to inspect.")
         return
+
     if size > MAX_PREVIEW_BYTES:
         st.caption(f"Showing the first {an.format_bytes(MAX_PREVIEW_BYTES)}.")
     st.code(text, language=CODE_LANG.get(suffix, "text"), line_numbers=True)
-    others = [
-        i
-        for i, r in by_id.items()
-        if i != run["id"]
-        and not r["missing"]
-        and (ROOT / r["path"] / rel).is_file()
-    ]
-    if not others:
+    # A config file is compared with the main config file of the other
+    # runs, whatever its name; any other file with the same file.
+    is_config = rel in config_paths(run)
+    targets = {}
+    for i, r in sorted(by_id.items(), key=lambda item: item[1]["name"]):
+        if i == run["id"] or r["missing"]:
+            continue
+        other_configs = config_paths(r)
+
+        if is_config and other_configs:
+            targets[i] = other_configs[0]
+        elif (ROOT / r["path"] / rel).is_file():
+            targets[i] = rel
+
+    if not targets:
         return
     other = st.selectbox(
-        f"Diff {rel} with the same file in",
-        [None, *others],
-        format_func=lambda i: "—" if i is None else by_id[i]["name"],
+        f"Diff {rel} with the "
+        + ("config file of" if is_config else "same file in"),
+        [None, *targets],
+        format_func=lambda i: (
+            "—"
+            if i is None
+            else (
+                by_id[i]["name"]
+                if targets[i] == rel
+                else f"{by_id[i]['name']} ({targets[i]})"
+            )
+        ),
         key=f"diff_{run['id']}_{rel}",
     )
+
     if other is None:
         return
-    other_path = safe_file(ROOT / by_id[other]["path"], rel)
-    other_text = read_text(other_path) if other_path else None
-    if other_text is None:
-        st.info("The other file is binary or unreadable.")
-        return
-    diff = "".join(
-        difflib.unified_diff(
-            other_text.splitlines(keepends=True),
-            text.splitlines(keepends=True),
-            fromfile=f"{by_id[other]['name']}/{rel}",
-            tofile=f"{run['name']}/{rel}",
-        )
-    )
-    st.code(diff or "Files are identical.", language="diff")
+    text_diff(run, rel, by_id[other], targets[other])
 
 
 def view_collections(data: dict, editor: bool) -> None:
@@ -4208,22 +4595,26 @@ def view_collections(data: dict, editor: bool) -> None:
     annotations file still call them groups.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         editor: Whether the visitor can edit.
     """
     conn = db.connect(DB_PATH)
     groups, by_id = data["groups"], data["by_id"]
+
     if editor:
         with st.form("new_group", clear_on_submit=True):
             a, b = st.columns([1, 2])
             name = a.text_input("New collection")
             description = b.text_input(
-                "Description", placeholder="What this ablation tests"
+                "Description",
+                placeholder="What this ablation tests",
             )
+
             if st.form_submit_button("Create collection") and name.strip():
                 db.create_group(conn, name, description)
                 conn.close()
                 st.rerun()
+
     if not groups:
         st.info(
             "No collections yet. Create one here, or select runs in "
@@ -4236,7 +4627,7 @@ def view_collections(data: dict, editor: bool) -> None:
             {
                 "collection": [g["name"] for g in groups],
                 "runs": [len(g["members"]) for g in groups],
-                "selection metric": [
+                "selection scalar": [
                     g["selection_metric"] or "" for g in groups
                 ],
                 "compute": [
@@ -4254,6 +4645,7 @@ def view_collections(data: dict, editor: bool) -> None:
         ),
         hide_index=True,
     )
+
     if not editor:
         conn.close()
         return
@@ -4273,6 +4665,7 @@ def view_collections(data: dict, editor: bool) -> None:
             default=[m for m in g["members"] if m in by_id],
             format_func=lambda i: by_id[i]["name"],
         )
+
         if st.form_submit_button("Save collection", type="primary"):
             db.update_group(
                 conn,
@@ -4316,6 +4709,7 @@ def confirm_button(label, message, on_confirm, key, icon=None) -> None:
     """
     with st.popover(label, icon=icon):
         st.markdown(message)
+
         if st.button("Yes, do it", key=key, type="primary"):
             on_confirm()
             st.rerun()
@@ -4353,7 +4747,7 @@ def fields_frame(defined: list[Field]) -> pl.DataFrame:
         defined: All fields.
 
     Returns:
-        The table, with a hidden ``key`` column holding each field's
+        The table, with a hidden `key` column holding each field's
         current name (empty for rows added in the editor).
     """
     return pl.DataFrame(
@@ -4392,7 +4786,10 @@ def _int(value) -> int | None:
 
 
 def apply_field_changes(
-    conn, original: pl.DataFrame, edited, by_name: dict[str, Field]
+    conn,
+    original: pl.DataFrame,
+    edited,
+    by_name: dict[str, Field],
 ) -> list[str]:
     """Save added, changed and deleted fields from the editor.
 
@@ -4429,10 +4826,12 @@ def apply_field_changes(
                 visible=row["Visible"] is not False,
                 position=_int(row["Order"]) or 0,
             )
+
             if not key:
                 if fld.name:
                     db.create_field(conn, fld)
                 continue
+
             if row["Delete"]:
                 db.delete_field(conn, key)
                 continue
@@ -4442,6 +4841,7 @@ def apply_field_changes(
                 for c in FIELD_TABLE
                 if c not in ("Runs", "Delete")
             )
+
             if same:
                 continue
             # Options that still have values are kept: they are renamed,
@@ -4483,6 +4883,7 @@ def render_fields(conn, data: dict, editor: bool) -> None:
         help="Saves every field with its settings as JSON, to set up "
         "another runs folder the same way. Values are not included.",
     )
+
     if editor:
         with bar.popover("Import fields", icon=":material/upload_file:"):
             upload = st.file_uploader(
@@ -4499,6 +4900,7 @@ def render_fields(conn, data: dict, editor: bool) -> None:
                 help="Fields are matched by name. Values are never "
                 "touched, but updating can change a field's type.",
             )
+
             if st.button(
                 "Import",
                 type="primary",
@@ -4530,6 +4932,7 @@ def render_fields(conn, data: dict, editor: bool) -> None:
             options_editor(conn, data)
 
     original = fields_frame(defined)
+
     if not editor:
         show_table(original.drop("key", "Delete"), hide_index=True)
         return
@@ -4555,7 +4958,9 @@ def render_fields(conn, data: dict, editor: bool) -> None:
             ),
             "Name": st.column_config.TextColumn(required=True),
             "Type": st.column_config.SelectboxColumn(
-                options=list(fields.TYPES), required=True, default="text"
+                options=list(fields.TYPES),
+                required=True,
+                default="text",
             ),
             "Better when": st.column_config.SelectboxColumn(
                 options=list(fields.DIRECTIONS),
@@ -4568,7 +4973,9 @@ def render_fields(conn, data: dict, editor: bool) -> None:
                 help=HELP_SCALE,
             ),
             "Decimals": st.column_config.NumberColumn(
-                min_value=0, max_value=10, step=1
+                min_value=0,
+                max_value=10,
+                step=1,
             ),
             "Visible": st.column_config.CheckboxColumn(
                 default=True,
@@ -4579,7 +4986,8 @@ def render_fields(conn, data: dict, editor: bool) -> None:
                 help="How many runs have a value."
             ),
             "Delete": st.column_config.CheckboxColumn(
-                default=False, help="Deletes the field and all its values."
+                default=False,
+                help="Deletes the field and all its values.",
             ),
         },
     )
@@ -4593,12 +5001,14 @@ def render_fields(conn, data: dict, editor: bool) -> None:
         f"{n} ({by_name[n].runs} runs)" for n in deleting if by_name[n].runs
     ]
     confirmed = True
+
     if with_values:
         confirmed = st.checkbox(
             f"Delete {', '.join(with_values)} with their values. This can't "
             "be undone.",
             key="fields_confirm",
         )
+
     if st.button(
         "Save fields",
         type="primary",
@@ -4606,6 +5016,7 @@ def render_fields(conn, data: dict, editor: bool) -> None:
         disabled=not confirmed,
     ):
         problems = apply_field_changes(conn, original, edited, by_name)
+
         if problems:
             st.error("\n".join(f"- {p}" for p in problems))
         else:
@@ -4635,6 +5046,7 @@ def options_editor(conn, data: dict) -> None:
         format_func=lambda n: by_name[n].label(with_group=True, arrow=False),
     )
     counts = db.option_counts(conn, name)
+
     if not counts:
         st.caption("No options yet. They appear as you type values.")
         return
@@ -4664,14 +5076,16 @@ def options_editor(conn, data: dict) -> None:
         key=f"options_{name}_{db.data_version(conn)}",
         column_config={
             "Color": st.column_config.MultiselectColumn(
-                options=list(colors), color=list(colors.values())
+                options=list(colors),
+                color=list(colors.values()),
             ),
             "Rename to": st.column_config.TextColumn(
                 help="Changes the value on every run. Renaming to an "
                 "option that exists merges the two."
             ),
             "Order": st.column_config.NumberColumn(
-                step=1, help="Sets the order, and so the color."
+                step=1,
+                help="Sets the order, and so the color.",
             ),
             "Delete": st.column_config.CheckboxColumn(
                 help="Removes the value from every run."
@@ -4683,6 +5097,7 @@ def options_editor(conn, data: dict) -> None:
         if isinstance(edited, pl.DataFrame)
         else edited.to_dict("records")
     )
+
     if st.button("Save values", type="primary", key="options_save"):
         rows.sort(key=lambda r: _int(r["Order"]) or 0)
         renames = {
@@ -4720,15 +5135,16 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
         data["metrics"].group_by("tag").len().sort("tag").iter_rows()
     )
     tags = list(runs_per_tag)
+
     if not tags:
-        st.info("No metrics logged yet.")
+        st.info("No scalars logged yet.")
         return
     word = {"max": "higher", "min": "lower"}
     # "auto" follows the guess from the name; higher/lower pin a choice.
     table = pl.DataFrame(
         {
             "Group": [metric_field(t).group for t in tags],
-            "Metric": tags,
+            "Scalar": tags,
             "Better when": [word.get(directions.get(t), "auto") for t in tags],
             "Unit": [display.get(t, {}).get("unit", "") for t in tags],
             "Scale": [display.get(t, {}).get("scale") or None for t in tags],
@@ -4737,7 +5153,7 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
         },
         schema={
             "Group": pl.String,
-            "Metric": pl.String,
+            "Scalar": pl.String,
             "Better when": pl.String,
             "Unit": pl.String,
             "Scale": pl.String,
@@ -4745,11 +5161,12 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
             "Runs": pl.Int64,
         },
     )
+
     if not editor:
         show_table(table, hide_index=True)
         return
     st.caption(
-        "The group of a metric is its tag up to the last /, unless you "
+        "The group of a scalar is its tag up to the last /, unless you "
         "change it. Groups, units and decimals are used in Experiments, "
         "Compare and Run details. Names containing loss, error, mse, … "
         "default to lower is better."
@@ -4758,7 +5175,7 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
         table,
         hide_index=True,
         width="stretch",
-        disabled=["Metric", "Runs"],
+        disabled=["Scalar", "Runs"],
         key=f"metrics_editor_{db.data_version(conn)}",
         height=min(38 + 35 * (len(tags) + 1), 720),
         column_config={
@@ -4769,7 +5186,8 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
                 "fixes it.",
             ),
             "Scale": st.column_config.SelectboxColumn(
-                options=[k for k in fields.SCALES if k], help=HELP_SCALE
+                options=[k for k in fields.SCALES if k],
+                help=HELP_SCALE,
             ),
             "Decimals": st.column_config.NumberColumn(
                 min_value=0,
@@ -4785,16 +5203,17 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
         else edited.to_dict("records")
     )
     buttons = st.container(horizontal=True, gap="small")
-    if buttons.button("Save metrics", type="primary", icon=":material/save:"):
-        chosen = {r["Metric"]: r["Better when"] for r in rows}
+
+    if buttons.button("Save scalars", type="primary", icon=":material/save:"):
+        chosen = {r["Scalar"]: r["Better when"] for r in rows}
         try:
             db.set_metric_display(
                 conn,
                 {
-                    r["Metric"]: {
+                    r["Scalar"]: {
                         "group": None
                         if _text(r["Group"])
-                        == fields.metric_group(r["Metric"])
+                        == fields.metric_group(r["Scalar"])
                         else _text(r["Group"]),
                         "unit": _text(r["Unit"]),
                         "scale": _text(r["Scale"]),
@@ -4815,15 +5234,17 @@ def render_metrics(conn, data: dict, editor: bool) -> None:
             },
         )
         db.clear_directions(
-            conn, [t for t, b in chosen.items() if b == "auto"]
+            conn,
+            [t for t, b in chosen.items() if b == "auto"],
         )
-        st.toast("Metrics saved")
+        st.toast("Scalars saved")
         st.rerun()
+
     if directions and buttons.button(
         "Reset directions to auto",
         type="tertiary",
         icon=":material/restart_alt:",
-        help="Forget every direction you set; each metric goes back to "
+        help="Forget every direction you set; each scalar goes back to "
         "the guess from its name.",
     ):
         db.clear_directions(conn)
@@ -4834,11 +5255,11 @@ def view_fields_settings(data: dict, editor: bool) -> None:
     """Fields, metrics, settings and the project, in tabs.
 
     Args:
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         editor: Whether the visitor can edit.
     """
     conn = db.connect(DB_PATH)
-    tabs = st.tabs(["Fields", "Metrics", "Settings", "Project"])
+    tabs = st.tabs(["Fields", "Scalars", "Settings", "Project"])
     with tabs[0]:
         render_fields(conn, data, editor)
     with tabs[1]:
@@ -4858,7 +5279,7 @@ def render_project(conn, data: dict, editor: bool) -> None:
 
     Args:
         conn: Open connection.
-        data: Output of :func:`load_data`, plus ``by_id``.
+        data: Output of :func:`load_data`, plus `by_id`.
         editor: Whether the visitor can edit.
     """
     runs = data["runs"]
@@ -4867,7 +5288,9 @@ def render_project(conn, data: dict, editor: bool) -> None:
     tiles[1].metric("Fields", len(data["fields"]), border=True)
     tiles[2].metric("Collections", len(data["groups"]), border=True)
     tiles[3].metric(
-        "Disk usage", an.format_bytes(runs["total_bytes"].sum()), border=True
+        "Disk usage",
+        an.format_bytes(runs["total_bytes"].sum()),
+        border=True,
     )
     st.markdown(f"Runs folder: `{ROOT}`")
     st.caption(
@@ -4886,7 +5309,9 @@ def manage_disk(conn, data: dict, editor: bool) -> None:
     c1, c2, c3 = st.columns(3)
     c1.metric("Total", an.format_bytes(runs["total_bytes"].sum()), border=True)
     c2.metric(
-        "Artifacts", an.format_bytes(runs["artifact_bytes"].sum()), border=True
+        "Artifacts",
+        an.format_bytes(runs["artifact_bytes"].sum()),
+        border=True,
     )
     archived = runs.filter(pl.col("archived") == 1)["total_bytes"].sum()
     c3.metric("Archived runs", an.format_bytes(archived), border=True)
@@ -4906,6 +5331,7 @@ def manage_disk(conn, data: dict, editor: bool) -> None:
         ),
         hide_index=True,
     )
+
     if data["groups"]:
         sizes = sorted(
             (
@@ -4944,7 +5370,7 @@ def manage_disk(conn, data: dict, editor: bool) -> None:
 
 def manage_settings(conn, data: dict, editor: bool) -> None:
     """Thresholds, seed pattern and limits."""
-    settings = data["settings"]
+    settings, defaults = data["settings"], db.DEFAULT_SETTINGS
     with st.form("settings"):
         a, b = st.columns(2)
         active = a.number_input(
@@ -4967,37 +5393,66 @@ def manage_settings(conn, data: dict, editor: bool) -> None:
             "Default: 360 (6 h).",
         )
         seed = a.text_input(
-            "Seed pattern in run names (regex)", settings["seed_regex"]
+            "Seed pattern in run names (regex)",
+            settings["seed_regex"],
+            help="Removed from run names to find the runs that differ only "
+            f"by their seed. Default: `{defaults['seed_regex']}`.",
         )
         points = b.number_input(
             "Max stored points per curve (0 = all)",
             0,
             10_000_000,
             int(settings["max_points"]),
+            help="Longer curves are thinned for plotting, keeping the "
+            "first, last, lowest and highest points. Best, last, min and "
+            "max always use every point. Default: "
+            f"{defaults['max_points']}.",
         )
         zip_mb = a.number_input(
             "Max zip download (MB)",
             1,
             1_000_000,
             int(settings["max_zip_mb"]),
+            help="The largest selection of files that can be downloaded "
+            f"as one zip. Default: {defaults['max_zip_mb']} MB.",
         )
         max_tb = b.number_input(
             "Max TensorBoards at once",
             1,
             50,
             int(settings["max_tensorboards"]),
-            help="Each one is a separate process using memory.",
+            help="Each one is a separate process using memory. Default: "
+            f"{defaults['max_tensorboards']}.",
+        )
+        patterns = st.text_input(
+            "Config file names",
+            ", ".join(settings["config_patterns"]),
+            help="Comma-separated patterns of the .json, .yaml, .yml or "
+            ".toml files whose values become hyperparameters, e.g. "
+            "`config.*` or `conf/*.toml`. A pattern without / matches "
+            "names in the top folder of a run, one folder down or in "
+            ".hydra/; one with / matches the path inside the run. The "
+            "first pattern a run matches gives its main config file, "
+            "which is compared between runs. Default: "
+            + ", ".join(db.DEFAULT_SETTINGS["config_patterns"])
+            + ".",
         )
         tb_args = st.text_input(
             "Extra TensorBoard arguments",
             settings["tensorboard_args"],
             placeholder="--samples_per_plugin images=100 --reload_interval 30",
-            help="Added to every TensorBoard started from Compare.",
+            help="Added to every TensorBoard started from the app. Default: "
+            "none.",
         )
+
         if st.form_submit_button("Save settings", type="primary"):
-            reparse = (gap, points) != (
+            config_patterns = [
+                p.strip() for p in patterns.split(",") if p.strip()
+            ]
+            reparse = (gap, points, config_patterns) != (
                 settings["gap_minutes"],
                 settings["max_points"],
+                list(settings["config_patterns"]),
             )
             db.save_settings(
                 conn,
@@ -5009,15 +5464,21 @@ def manage_settings(conn, data: dict, editor: bool) -> None:
                     "max_zip_mb": zip_mb,
                     "max_tensorboards": max_tb,
                     "tensorboard_args": tb_args,
+                    "config_patterns": config_patterns,
                 },
             )
+
             if reparse:
-                run_scan()  # The changed settings re-parse every run.
+                # The pause and the stored points re-parse every run; the
+                # config file names re-parse the runs whose files changed.
+                run_scan()
             st.rerun()
     st.caption(
         "Changing the pause or the stored points re-parses every run, since "
-        "both change what is computed from the event files."
+        "both change what is computed from the event files. Changing the "
+        "config file names re-reads the runs whose config files change."
     )
+
     if st.button("Re-parse every run", icon=":material/sync:"):
         counts = run_scan(force=True)
         st.toast(
@@ -5051,11 +5512,14 @@ def manage_backup(conn, data: dict, editor: bool) -> None:
         mime="application/json",
         icon=":material/download:",
     )
+
     if not editor:
         return
     upload = st.file_uploader(
-        "Import annotations (merges into the current ones)", type=["json"]
+        "Import annotations (merges into the current ones)",
+        type=["json"],
     )
+
     if upload is not None and st.button("Import"):
         try:
             result = db.import_annotations(conn, json.loads(upload.getvalue()))
@@ -5071,6 +5535,7 @@ def manage_backup(conn, data: dict, editor: bool) -> None:
         f"**{missing} missing runs** (folder deleted or moved outside the "
         "root)."
     )
+
     if missing:
 
         def forget() -> None:
@@ -5105,9 +5570,11 @@ def main() -> None:
     editor = role == "editor"
 
     conn = db.connect(DB_PATH)
+
     if db.get_meta(conn, "annotations_path") != str(ANNOTATIONS_PATH):
         db.set_meta(conn, "annotations_path", str(ANNOTATIONS_PATH))
         conn.commit()
+
     if not st.session_state.get("scanned"):
         # The CLI already did the first full scan; this picks up changes.
         run_scan()
@@ -5122,7 +5589,9 @@ def main() -> None:
     status = [
         an.run_status(end, mtime, missing, now, active_minutes)
         for end, mtime, missing in runs.select(
-            "end_time", "last_file_mtime", "missing"
+            "end_time",
+            "last_file_mtime",
+            "missing",
         ).iter_rows()
     ]
     runs = runs.with_columns(pl.Series("status", status, pl.String))
@@ -5142,8 +5611,10 @@ def main() -> None:
         for r in runs.iter_rows(named=True)
     }
     open_link(data)
+
     if st.session_state.get("view") not in VIEWS:
         st.session_state.view = "Experiments"
+
     if "filters" not in st.session_state:
         st.session_state.filters = json.loads(json.dumps(FILTER_DEFAULTS))
     sidebar(runs, data["groups"], editor, now)
@@ -5160,9 +5631,11 @@ def main() -> None:
         )
         return
     view = st.session_state.view
+
     if view != "Compare" and len(st.query_params):
         st.query_params.clear()
     page_header(view)
+
     if view == "Help":
         view_help()
     elif view == "Experiments":

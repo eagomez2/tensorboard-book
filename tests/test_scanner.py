@@ -1,3 +1,4 @@
+import json
 import shutil
 
 import numpy as np
@@ -47,7 +48,8 @@ def test_metric_summary_and_series(demo):
     _, conn = demo
     rid = runs_by_path(conn)["resnet_lr3e-4"]["id"]
     row = conn.execute(
-        "SELECT * FROM metrics WHERE run_id=? AND tag='val/acc'", (rid,)
+        "SELECT * FROM metrics WHERE run_id=? AND tag='val/acc'",
+        (rid,),
     ).fetchone()
     series = db.load_series(conn, rid, "val/acc")
     assert row["n"] == len(series) == 20
@@ -73,7 +75,8 @@ def test_resumed_run_has_two_segments(demo):
     run = runs_by_path(conn)["resnet_lr3e-3"]
     assert run["n_segments"] == 2
     assert run["wall_span"] - run["compute_time"] == pytest.approx(
-        12 * 3600, rel=0.01
+        12 * 3600,
+        rel=0.01,
     )
 
 
@@ -115,7 +118,8 @@ def test_rename_keeps_record_and_annotations(demo):
     tags = [
         r["tag"]
         for r in conn.execute(
-            "SELECT tag FROM run_tags WHERE run_id=?", (rid,)
+            "SELECT tag FROM run_tags WHERE run_id=?",
+            (rid,),
         )
     ]
     assert tags == ["keep-me"]
@@ -148,7 +152,9 @@ def test_appended_events_trigger_reparse(demo):
     event_file = next((root / "resnet_lr1e-4").glob("events.out.tfevents.*"))
     value = summary_pb2.Summary.Value(tag="val/acc", simple_value=0.99)
     event = event_pb2.Event(
-        wall_time=2e9, step=60000, summary=summary_pb2.Summary(value=[value])
+        wall_time=2e9,
+        step=60000,
+        summary=summary_pb2.Summary(value=[value]),
     )
     with open(event_file, "ab") as fh:
         RecordWriter(fh).write(event.SerializeToString())
@@ -156,7 +162,8 @@ def test_appended_events_trigger_reparse(demo):
     assert counts["parsed"] == 1
     rid = runs_by_path(conn)["resnet_lr1e-4"]["id"]
     best = conn.execute(
-        "SELECT max FROM metrics WHERE run_id=? AND tag='val/acc'", (rid,)
+        "SELECT max FROM metrics WHERE run_id=? AND tag='val/acc'",
+        (rid,),
     ).fetchone()["max"]
     assert best == pytest.approx(0.99)
 
@@ -236,7 +243,8 @@ def test_changing_pause_setting_reparses_every_run(demo):
     root, conn = demo
     assert scanner.scan(conn, root)["parsed"] == 0
     db.save_settings(
-        conn, {"gap_minutes": 60 * 24}
+        conn,
+        {"gap_minutes": 60 * 24},
     )  # a 12 h pause is no pause
     assert scanner.scan(conn, root)["parsed"] == 14
     run = runs_by_path(conn)["resnet_lr3e-3"]
@@ -263,3 +271,39 @@ def test_load_runs_and_details(demo):
     series = db.load_series(conn, keras, "train/epoch_loss")
     assert series.columns == ["step", "wall_time", "value"]
     assert db.load_series(conn, keras, "nope").is_empty()
+
+
+def test_config_files_follow_the_name_patterns():
+    files = [
+        ("hparams.yaml", 10, 0),
+        ("config.toml", 10, 0),
+        ("a/b/config.json", 10, 0),
+        ("conf/train.toml", 10, 0),
+        ("notes.txt", 10, 0),
+        (".hydra/config.yaml", 10, 0),
+    ]
+    patterns = db.DEFAULT_SETTINGS["config_patterns"]
+    assert scanner.config_files(files, patterns) == [
+        "config.toml",
+        ".hydra/config.yaml",
+        "hparams.yaml",
+    ]
+    assert scanner.config_files(files, ["conf/*.toml", "*.yaml"]) == [
+        "conf/train.toml",
+        "hparams.yaml",
+        ".hydra/config.yaml",
+    ]
+
+
+def test_renamed_toml_config_becomes_hyperparameters(demo):
+    root, conn = demo
+    (root / "keras_baseline" / "experiment.toml").write_text(
+        'lr = 0.1\n[model]\nname = "mlp"\n'
+    )
+    db.save_settings(conn, {"config_patterns": ["experiment.*"]})
+    scanner.scan(conn, root)
+    run = runs_by_path(conn)["keras_baseline"]
+    hparams = json.loads(run["hparams"])
+    assert hparams["lr"] == 0.1
+    assert hparams["model.name"] == "mlp"
+    assert json.loads(run["hparam_sources"])[-1] == "experiment.toml"

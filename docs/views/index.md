@@ -38,10 +38,10 @@ The pages in this section are the same guides the app shows under
 
 | View | What it's for |
 |---|---|
-| [Experiments](experiments.md) | The main table: every run with its best metrics, filters, tags, collections and fields. |
-| [Run details](run-details.md) | Everything about one run: its fields, files, metrics and timing. |
+| [Experiments](experiments.md) | The main table: every run with its best scalars, filters, tags, collections and fields. |
+| [Run details](run-details.md) | Everything about one run: its fields, files, scalars and timing. |
 | [Compare](compare.md) | A fair comparison of a collection, with seeds aggregated and exports for papers. |
 | [Curves](curves.md) | Training curves of up to eight runs, overlaid and smoothed. |
 | [Timeline](timeline.md) | When runs were active, how many ran at once, compute hours per day. |
 | [Collections](collections.md) | Named sets of runs, such as a sweep or an ablation study. |
-| [Fields and settings](fields-and-settings.md) | Fields, metric display, settings, disk usage and backups. |
+| [Fields and settings](fields-and-settings.md) | Fields, scalar display, settings, disk usage and backups. |

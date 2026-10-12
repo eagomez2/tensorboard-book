@@ -98,6 +98,6 @@ nav:
       - Status and run time: topics/status-and-time.md
       - Fields: topics/fields.md
       - Opening TensorBoard: topics/tensorboard.md
-      - Metrics and settings: topics/settings.md
+      - Scalars and settings: topics/settings.md
   - Password and deployment: deployment.md
   - Command line: cli.md
