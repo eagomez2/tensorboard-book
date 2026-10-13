@@ -1824,11 +1824,15 @@ def sidebar(
                     f"{counts['missing']} missing"
                 )
             st.rerun()
-        pill_switch(
+        auto = st.session_state.get("auto_refresh", False)
+        right.button(
             "Auto",
-            "auto_refresh",
-            where=right,
-            help="Rescan every 60 s",
+            icon=":material/autorenew:",
+            width="stretch",
+            type="primary" if auto else "secondary",
+            on_click=st.session_state.update,
+            kwargs={"auto_refresh": not auto},
+            help="Rescan every 60 s. Click again to stop.",
         )
 
         if os.environ.get(auth.NO_AUTH_ENV) != "1":
