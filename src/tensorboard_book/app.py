@@ -759,6 +759,60 @@ def widget_state(key: str, options, default) -> None:
         st.session_state[key] = default
 
 
+def sync_pill(pill: str, store, key: str, option: str) -> None:
+    """Widget callback: copy a pill's state into an on/off value.
+
+    Args:
+        pill: Session key of the pills widget.
+        store: Where the value lives: `st.session_state` or a dict in it.
+        key: Key of the value in `store`.
+        option: The pill's only option.
+    """
+    store[key] = st.session_state.get(pill) == option
+
+
+def pill_switch(
+    label: str,
+    key: str,
+    where=None,
+    store=None,
+    text: str | None = None,
+    help: str | None = None,
+    label_visibility: str = "collapsed",
+) -> bool:
+    """Draw an on/off switch as a single pill, clicked to turn it on or off.
+
+    Args:
+        label: Widget label, and the pill's text unless `text` is given.
+        key: Key of the on/off value in `store`. The pill's own key is
+            `<key>_pill`.
+        where: Container to draw in. Defaults to the page.
+        store: Where the value lives. Defaults to `st.session_state`.
+        text: Text on the pill.
+        help: Tooltip.
+        label_visibility: `"collapsed"`, or `"hidden"` to line the pill
+            up with labeled widgets next to it.
+
+    Returns:
+        Whether the switch is on.
+    """
+    where = where or st
+    store = st.session_state if store is None else store
+    pill = f"{key}_pill"
+    st.session_state[pill] = label if store.get(key) else None
+    where.pills(
+        label,
+        [label],
+        key=pill,
+        format_func=lambda _: text or label,
+        label_visibility=label_visibility,
+        help=help,
+        on_change=sync_pill,
+        args=(pill, store, key, label),
+    )
+    return bool(store.get(key))
+
+
 def tags_field() -> Field:
     """Return the built-in tags field, whose options order the tag colors."""
     return FIELDS_BY_NAME.get(fields.TAGS) or Field(fields.TAGS, type="tags")
@@ -1746,8 +1800,6 @@ def sidebar(
                 "Search",
                 placeholder="name, tag, note or config value",
             )
-            filter_widget(st.toggle, "starred", "Starred only")
-            filter_widget(st.toggle, "archived", "Show archived")
         last_scan = st.session_state.get("last_scan", now)
         n_active = runs.filter(pl.col("status") == "Active").height
         st.caption(
@@ -1772,7 +1824,12 @@ def sidebar(
                     f"{counts['missing']} missing"
                 )
             st.rerun()
-        right.toggle("Auto", key="auto_refresh", help="Rescan every 60 s")
+        pill_switch(
+            "Auto",
+            "auto_refresh",
+            where=right,
+            help="Rescan every 60 s",
+        )
 
         if os.environ.get(auth.NO_AUTH_ENV) != "1":
             if st.button("Log out", icon=":material/logout:", type="tertiary"):
@@ -1805,6 +1862,361 @@ def auto_refresh() -> None:
 # ------------------------------------------------------------------------
 # Views
 # ------------------------------------------------------------------------
+
+
+# Saved views of Experiments: the session keys they set, and how each
+# column is named in the column order ("i:" info columns and fields, "s:"
+# scalars, "h:" hyperparameters).
+VIEW_FILTERS = ("group", "tags", "status", "search", "starred", "archived")
+
+
+def filter_pills(where=None) -> None:
+    """Draw the Starred only and Show archived pills of the filters.
+
+    Args:
+        where: Container to draw in. Defaults to the page.
+    """
+    where = where or st
+    filters = st.session_state.filters
+    pill_switch(
+        "Starred only",
+        "starred",
+        where=where,
+        store=filters,
+        text="★ Starred only",
+        help="Only runs with a star.",
+    )
+    pill_switch(
+        "Show archived",
+        "archived",
+        where=where,
+        store=filters,
+        help="Archived runs are hidden unless this is on. Their files are "
+        "untouched.",
+    )
+
+
+def experiment_views(settings: dict) -> tuple[dict, str]:
+    """Return the saved views of Experiments and the default one.
+
+    Args:
+        settings: App settings.
+
+    Returns:
+        The views by name, and the name of the default view (or "").
+    """
+    views = settings.get("experiment_views") or {}
+    default = settings.get("default_experiment_view") or ""
+    return views, default if default in views else ""
+
+
+def current_view() -> dict:
+    """Collect what a saved view of Experiments stores.
+
+    Returns:
+        The sidebar filters, the chosen scalars, hyperparameters and
+        extra columns, the column order, the Value switch and the Filter
+        box.
+    """
+    filters = st.session_state.filters
+    group = filters["group"]
+    return {
+        "filters": {k: filters[k] for k in VIEW_FILTERS},
+        "scalars": list(st.session_state.get(f"metrics_{group}", [])),
+        "hparams": list(st.session_state.get(f"hp_{group}", [])),
+        "show": list(st.session_state.get("info_cols", [])),
+        "order": list(st.session_state.get("exp_order", [])),
+        "value": st.session_state.get("value_mode", "Best"),
+        "filter": st.session_state.get("f_expr", ""),
+    }
+
+
+def apply_view(view: dict) -> None:
+    """Load a saved view into the widgets of Experiments and the sidebar.
+
+    Columns that no longer exist are dropped when the widgets are drawn.
+
+    Args:
+        view: Output of :func:`current_view`.
+    """
+    filters = st.session_state.filters
+    for key in VIEW_FILTERS:
+        if key in view.get("filters", {}):
+            filters[key] = view["filters"][key]
+            st.session_state[f"f_{key}"] = filters[key]
+    group = filters["group"]
+    st.session_state[f"metrics_{group}"] = list(view.get("scalars", []))
+    st.session_state[f"hp_{group}"] = list(view.get("hparams", []))
+    st.session_state["info_cols"] = list(view.get("show", []))
+    st.session_state["exp_order"] = list(view.get("order", []))
+    st.session_state["value_mode"] = view.get("value", "Best")
+    st.session_state["f_expr"] = view.get("filter", "")
+
+
+def open_default_view(settings: dict) -> None:
+    """Apply the default view the first time Experiments opens.
+
+    Args:
+        settings: App settings.
+    """
+    if st.session_state.get("views_opened"):
+        return
+    st.session_state.views_opened = True
+    views, default = experiment_views(settings)
+
+    if default:
+        apply_view(views[default])
+        st.session_state.current_view = default
+
+
+def open_view(name: str, view: dict) -> None:
+    """Callback of a view button: apply the view and say so.
+
+    Args:
+        name: View name.
+        view: The saved view.
+    """
+    apply_view(view)
+    st.session_state.current_view = name
+    st.toast(f"Opened view '{name}'")
+
+
+def save_views(views: dict, default: str) -> None:
+    """Store the saved views and the default one.
+
+    Args:
+        views: Every view, by name.
+        default: Name of the default view, or "".
+    """
+    conn = db.connect(DB_PATH)
+    db.save_settings(
+        conn,
+        {"experiment_views": views, "default_experiment_view": default},
+    )
+    conn.close()
+
+
+def save_view(name: str, settings: dict) -> None:
+    """Save the current table as a view, replacing one with that name.
+
+    Args:
+        name: View name.
+        settings: App settings.
+    """
+    views, default = experiment_views(settings)
+    save_views({**views, name: current_view()}, default)
+    st.session_state.current_view = name
+    st.toast(f"Saved view '{name}'")
+
+
+def set_default_view(name: str, settings: dict) -> None:
+    """Callback of a view's home button: make it the default, or not.
+
+    Args:
+        name: View name.
+        settings: App settings.
+    """
+    views, default = experiment_views(settings)
+
+    if default == name:
+        save_views(views, "")
+        st.toast("Experiments opens with the usual columns")
+    else:
+        save_views(views, name)
+        st.toast(f"Experiments opens with the view '{name}'")
+
+
+def delete_view(name: str, settings: dict) -> None:
+    """Callback of a view's delete button.
+
+    Args:
+        name: View name.
+        settings: App settings.
+    """
+    views, default = experiment_views(settings)
+    views = {k: v for k, v in views.items() if k != name}
+    save_views(views, "" if default == name else default)
+
+    if st.session_state.get("current_view") == name:
+        st.session_state.pop("current_view")
+    st.toast(f"Deleted view '{name}'")
+
+
+def render_views(settings: dict, editor: bool) -> None:
+    """Draw the saved views, each as a button, and the form to save one.
+
+    Args:
+        settings: App settings.
+        editor: Whether the visitor can edit.
+    """
+    views, default = experiment_views(settings)
+    st.markdown(
+        "**Saved views**",
+        help="A view keeps the filters, the columns and their order, the "
+        "Value switch and the Filter box. The view marked with the home "
+        "button opens when the app starts.",
+    )
+
+    if not views:
+        st.caption("No saved views yet.")
+    current = st.session_state.get("current_view")
+
+    if current not in views:
+        current = None
+    for i, (name, view) in enumerate(views.items()):
+        row = st.container(horizontal=True, vertical_alignment="center")
+        row.button(
+            f"{name} · default" if name == default else name,
+            key=f"view_open_{i}",
+            icon=":material/check:" if name == current else None,
+            width="stretch",
+            on_click=open_view,
+            args=(name, view),
+            help="Show the filters and columns of this view.",
+        )
+
+        if editor:
+            row.button(
+                "",
+                key=f"view_home_{i}",
+                icon=":material/home:",
+                type="primary" if name == default else "tertiary",
+                on_click=set_default_view,
+                args=(name, settings),
+                help=(
+                    "Stop opening Experiments with this view."
+                    if name == default
+                    else "Open Experiments with this view."
+                ),
+            )
+            row.button(
+                "",
+                key=f"view_delete_{i}",
+                icon=":material/delete:",
+                type="tertiary",
+                on_click=delete_view,
+                args=(name, settings),
+                help=f"Delete the view '{name}'.",
+            )
+
+    if not editor:
+        return
+
+    if current is not None:
+        if views[current] != current_view():
+            st.caption(f"The table no longer matches the view '{current}'.")
+            st.button(
+                f"Save changes to '{current}'",
+                key="view_update",
+                icon=":material/save:",
+                type="primary",
+                width="stretch",
+                on_click=save_view,
+                args=(current, settings),
+            )
+        else:
+            st.caption(f"The table shows the view '{current}'.")
+    # A form sends the typed name with the button, without pressing Enter.
+    with st.form("new_view", clear_on_submit=True, border=False):
+        name = st.text_input(
+            "Save the current table as a new view",
+            placeholder="View name",
+            help="A view with the same name is replaced.",
+        )
+
+        if st.form_submit_button("Save view", icon=":material/bookmark_add:"):
+            if name.strip():
+                save_view(name.strip(), settings)
+                st.rerun()
+            else:
+                st.error("Type a name for the view.")
+
+
+def ordered_columns(keys: list[str]) -> list[str]:
+    """Put the shown columns in the order chosen under Columns.
+
+    Args:
+        keys: The shown columns, in their default order.
+
+    Returns:
+        The same columns: first the ones with a chosen place, in that
+        order, then new ones in their default order.
+    """
+    order = [k for k in st.session_state.get("exp_order", []) if k in keys]
+    order += [k for k in keys if k not in order]
+    st.session_state.exp_order = order
+    return order
+
+
+def move_column(key: str, step: int) -> None:
+    """Callback of an arrow: move a column up or down in the order.
+
+    Args:
+        key: The column.
+        step: `-1` to move it up, `1` to move it down.
+    """
+    order = list(st.session_state.get("exp_order", []))
+
+    if key not in order:
+        return
+    i = order.index(key)
+    j = i + step
+
+    if 0 <= j < len(order):
+        order[i], order[j] = order[j], order[i]
+    st.session_state.exp_order = order
+
+
+def render_column_order(order: list[str], names: dict[str, str]) -> None:
+    """Draw the shown columns with arrows to change their order.
+
+    Args:
+        order: The shown columns, in order.
+        names: The name of each column.
+    """
+    st.markdown(
+        "**Column order**",
+        help="Run is always first. Saved views keep this order. Dragging a "
+        "column header in the table only lasts until the page reloads.",
+    )
+
+    if not order:
+        st.caption("Pick scalars, hyperparameters or Show columns first.")
+        return
+    rows = st.container(gap=None)
+    for n, key in enumerate(order):
+        row = rows.container(
+            horizontal=True,
+            vertical_alignment="center",
+            gap="small",
+        )
+        row.button(
+            "",
+            key=f"col_up_{key}",
+            icon=":material/arrow_upward:",
+            type="tertiary",
+            disabled=n == 0,
+            on_click=move_column,
+            args=(key, -1),
+        )
+        row.button(
+            "",
+            key=f"col_down_{key}",
+            icon=":material/arrow_downward:",
+            type="tertiary",
+            disabled=n == len(order) - 1,
+            on_click=move_column,
+            args=(key, 1),
+        )
+        row.markdown(names[key])
+    st.button(
+        "Default order",
+        key="col_reset",
+        type="tertiary",
+        icon=":material/restart_alt:",
+        on_click=st.session_state.pop,
+        args=("exp_order", None),
+    )
 
 
 def view_experiments(
@@ -1856,6 +2268,7 @@ def view_experiments(
 
     if visible.is_empty():
         summary(visible)
+        filter_pills(st.container(horizontal=True))
         st.info("No runs match the filters. Check the sidebar, or Rescan.")
         return
 
@@ -1927,22 +2340,35 @@ def view_experiments(
         "Fields). Fields marked Visible are shown by default.",
     )
     info_cols = [c for c in shown_cols if not c.startswith(PROP)]
-    left, right = st.columns([4, 1])
-    expr = left.text_input(
+    # The default order: info columns, fields, scalars, hyperparameters.
+    names = {f"i:{c}": column_label(c) for c in info_cols}
+    names.update(
+        {f"i:{c}": column_label(c) for c in shown_cols if c.startswith(PROP)}
+    )
+    names.update({f"s:{t}": arrow(t, directions) for t in chosen})
+    names.update({f"h:{c}": c for c in hp_cols if f"s:{c}" not in names})
+    col_order = ordered_columns(list(names))
+    row = st.container(horizontal=True, vertical_alignment="bottom")
+    expr = row.text_input(
         "Filter",
         key="f_expr",
         placeholder="optimizer.lr < 1e-3 and val/acc > 0.9 and model ~ resnet",
         help="Terms joined by `and`. Operators: == != < <= > >= and ~ "
         "(regex). Keys are hyperparameters, scalar tags, or run, status, "
         "steps.",
+        width="stretch",
     )
-    mode = right.segmented_control(
+    widget_state("value_mode", ["Best", "Last"], "Best")
+    mode = row.segmented_control(
         "Value",
         ["Best", "Last"],
-        default="Best",
         required=True,
         key="value_mode",
     )
+    with row.popover("Columns", icon=":material/view_column:"):
+        render_column_order(col_order, names)
+    with row.popover("Views", icon=":material/bookmarks:"):
+        render_views(settings, editor)
 
     values = an.metric_table(metrics, ids, options, directions, mode.lower())
 
@@ -1982,6 +2408,17 @@ def view_experiments(
             )
         except ValueError as exc:
             st.error(str(exc))
+    shown_row = st.container(horizontal=True, vertical_alignment="center")
+    total = data["runs"]
+
+    if not st.session_state.filters["archived"]:
+        total = total.filter(pl.col("archived") == 0)
+    shown_row.markdown(
+        f"**{visible.height}** of {total.height} runs",
+        width="content",
+    )
+    shown_row.space("stretch")
+    filter_pills(shown_row)
 
     summary(visible)
     visible = visible.sort("start_time", descending=True, nulls_last=True)
@@ -2027,7 +2464,16 @@ def view_experiments(
     for col in hp_cols:
         if col not in columns:
             columns[col] = [format_hparam(v) for v in ordered_hp[col]]
-    table = pl.DataFrame(columns)
+    labels = {f"i:{c}": c for c in info_cols}
+    labels.update({f"i:{PROP}{f.name}": lab for lab, f in field_cols.items()})
+    labels.update({f"s:{t}": arrow(t, directions) for t in chosen})
+    labels.update({f"h:{c}": c for c in hp_cols})
+    placed = list(
+        dict.fromkeys(labels[k] for k in col_order if labels.get(k) in columns)
+    )
+    first = ["★", "run"]
+    rest = [c for c in columns if c not in first and c not in placed]
+    table = pl.DataFrame(columns).select(*first, *placed, *rest)
 
     def dash(fmt):
         return lambda v: fmt(v) or "–"
@@ -2421,7 +2867,12 @@ def view_compare(data: dict, visible: pl.DataFrame, editor: bool) -> None:
         key=f"report_{source}",
         format_func=lambda t: arrow(t, directions),
     )
-    aggregate = c3.toggle("Aggregate seeds", key=f"agg_{source}")
+    aggregate = pill_switch(
+        "Aggregate seeds",
+        f"agg_{source}",
+        where=c3,
+        label_visibility="hidden",
+    )
     key_mode, seed_regex = "name", settings["seed_regex"]
 
     if aggregate:
@@ -3284,7 +3735,12 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
         default="Step",
         required=True,
     )
-    log_y = c3.toggle("Log y")
+    log_y = pill_switch(
+        "Log y",
+        "curves_log_y",
+        where=c3,
+        label_visibility="hidden",
+    )
 
     if not chosen_runs or not tags:
         st.info("Pick at least one run and one scalar.")
@@ -3530,6 +3986,7 @@ def view_timeline(data: dict, visible: pl.DataFrame, now: float) -> None:
         required=True,
         key="tl_color",
     )
+    filter_pills(st.container(horizontal=True))
     days = {"7 days": 7, "30 days": 30, "90 days": 90, "1 year": 365}.get(span)
     start_limit = now - days * 86400 if days else -np.inf
 
@@ -4132,7 +4589,7 @@ def overview_tab(run: dict, data: dict) -> None:
             "Fields and settings → Fields, then set them here with Edit."
         )
     else:
-        show_empty = st.toggle("Show empty fields", key="run_show_empty")
+        show_empty = pill_switch("Show empty fields", "run_show_empty")
         shown_any = False
         for group, members in group_fields(defined).items():
             pairs = [
@@ -4398,7 +4855,12 @@ def artifacts_tab(
         key="art_filter",
         placeholder="checkpoints/ or .png",
     )
-    hide_ckpt = right.toggle("Hide checkpoints", key="art_hide_ckpt")
+    hide_ckpt = pill_switch(
+        "Hide checkpoints",
+        "art_hide_ckpt",
+        where=right,
+        label_visibility="hidden",
+    )
 
     if needle:
         files = files.filter(
@@ -5617,6 +6079,9 @@ def main() -> None:
 
     if "filters" not in st.session_state:
         st.session_state.filters = json.loads(json.dumps(FILTER_DEFAULTS))
+
+    if st.session_state.view == "Experiments":
+        open_default_view(data["settings"])
     sidebar(runs, data["groups"], editor, now)
     # The runs that pass the sidebar filters (shown in Experiments).
     visible = apply_filters(runs, data["by_id"], st.session_state.filters)

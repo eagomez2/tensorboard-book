@@ -30,5 +30,5 @@ Each logged scalar has:
 | Extra TensorBoard arguments | (empty) | Added to every launch, e.g. `--samples_per_plugin images=100`. |
 | Config file names | `config.*, hparams.*, args.*, params.*, cfg.*, opts.*` | Patterns of the `.yaml`, `.yml`, `.json` or `.toml` files read as hyperparameters. See [Config files](../runs.md#config-files). |
 
-The **Auto** toggle in the sidebar rescans every 60 seconds and refreshes the
+The **Auto** pill in the sidebar rescans every 60 seconds and refreshes the
 page when something changed.

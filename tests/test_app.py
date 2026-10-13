@@ -37,3 +37,43 @@ def test_view_draws(view, runs, monkeypatch):
     at.session_state["view"] = view
     at.run()
     assert not at.exception, [e.value for e in at.exception]
+
+
+def test_default_view_opens_with_its_columns(runs, monkeypatch):
+    monkeypatch.setenv("TBOOK_ROOT", str(runs))
+    monkeypatch.setenv("TBOOK_NO_AUTH", "1")
+    view = {
+        "filters": {"starred": True},
+        "scalars": ["val/acc"],
+        "hparams": [],
+        "show": ["status", "start"],
+        "order": ["s:val/acc", "i:start", "i:status"],
+        "value": "Last",
+        "filter": "",
+    }
+    conn = db.connect(db.default_path(runs))
+    db.save_settings(
+        conn,
+        {
+            "experiment_views": {"Mine": view},
+            "default_experiment_view": "Mine",
+        },
+    )
+    try:
+        at = AppTest.from_file(str(APP), default_timeout=120)
+        at.run()
+        assert not at.exception, [e.value for e in at.exception]
+        assert at.session_state["value_mode"] == "Last"
+        assert at.session_state["filters"]["starred"] is True
+        assert at.session_state["info_cols"] == ["status", "start"]
+        assert at.session_state["exp_order"] == [
+            "s:val/acc",
+            "i:start",
+            "i:status",
+        ]
+    finally:
+        db.save_settings(
+            conn,
+            {"experiment_views": {}, "default_experiment_view": ""},
+        )
+        conn.close()

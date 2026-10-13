@@ -27,9 +27,13 @@ version you're running. The app follows your system's light or dark
 setting. To pick one, open the ⋮ menu in the sidebar's bottom-left corner
 and choose **Settings → Theme**.
 
-The sidebar **filters** (collection, tags, status, search, starred, archived)
-only appear in the views they change, Experiments and Timeline, and keep
-their values while you visit other views. Compare can use the same runs
+The sidebar **filters** (collection, tags, status, search) only appear in
+the views they change, Experiments and Timeline, and keep their values
+while you visit other views. The **★ Starred only** and **Show archived**
+pills sit in those views, under the filters.
+
+On/off options, such as **Aggregate seeds** in Compare or **Log y** in
+Curves, are pills: click one to turn it on, and again to turn it off. Compare can use the same runs
 through **Runs shown in Experiments**. Curves and Run details list every
 run that isn't archived.
 

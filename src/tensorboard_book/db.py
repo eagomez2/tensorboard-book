@@ -61,6 +61,9 @@ DEFAULT_SETTINGS = {
     "default_metrics": [],
     "tensorboard_args": "",
     "max_tensorboards": 5,
+    # Saved views of Experiments, by name, and the one it opens with.
+    "experiment_views": {},
+    "default_experiment_view": "",
     # Names of the files whose values become hyperparameters; the first
     # pattern a run matches gives its main config file.
     "config_patterns": [

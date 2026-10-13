@@ -67,8 +67,21 @@ The main table, with one row per run.
   (as colored pills), collections, notes and your fields. Fields are listed
   with their group, as `Model · params (M)`; see the *Fields* topic.
 
+**Columns** (next to **Value**) lists the shown columns with arrows to
+change their order. **Run** always comes first.
+
 **Filter.** Narrow the table with conditions, e.g.
-`optimizer.lr < 1e-3 and val/acc > 0.9`. See the *Filters* topic.
+`optimizer.lr < 1e-3 and val/acc > 0.9`. See the *Filters* topic. Under
+it, the **★ Starred only** and **Show archived** pills, clicked to turn
+them on or off, narrow the runs further.
+
+**Views.** Save the table as it is under a name, and get it back with one
+click. A view keeps the sidebar filters, Starred only and Show archived,
+the scalars, hyperparameters and Show columns, the column order, the
+**Value** switch and the Filter box. The home button next to a view makes
+it the default: Experiments opens with it. When the table no longer
+matches the open view, **Save changes** updates it. Views are saved with
+your annotations.
 
 **Actions.** Tick rows and use the buttons under the table. They are
 greyed out until they apply:
@@ -82,7 +95,8 @@ greyed out until they apply:
 - **Field** sets or clears a field on all selected runs. Pick **Tags** to
   add or remove tags.
 - **Star** and **Archive**: archived runs are hidden unless you turn on
-  *Show archived* in the sidebar. Their files are untouched.
+  the *Show archived* pill under the Filter box. Their files are
+  untouched.
 - **Export CSV** saves the table as shown.
 
 **The numbers on top.** The number of runs shown, how many are active (see
@@ -298,8 +312,10 @@ optimizer.lr < 1e-3 and val/acc > 0.9 and model ~ resnet
 The sidebar filters appear in Experiments and Timeline, the views they
 change, and keep their values while you visit other views:
 - **Search** looks for text in names, tags, notes and config values.
-- **Collection**, **Tags**, **Status**, **Starred only** and **Show archived**
-  narrow down the runs.
+- **Collection**, **Tags** and **Status** narrow down the runs.
+- The **★ Starred only** and **Show archived** pills, in the page under the
+  filters, do the same. Click a pill to turn it on, and again to turn it
+  off.
 
 Compare can use the same runs through **Runs shown in Experiments**.
 Curves and Run details list every run that isn't archived.

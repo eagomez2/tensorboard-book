@@ -86,7 +86,8 @@ or with the `export-annotations` and `import-annotations` commands.
 The annotations file is version 2. Next to `runs`, it has `fields` (the
 field definitions), `tag_options` (the order, and so the colors, of the
 tags), `metric_display` (each scalar's group, unit, scale and decimals),
-`metric_directions`, `settings`, and the collections, which are still
+`metric_directions`, `settings` (which also hold the saved views of
+Experiments), and the collections, which are still
 stored under `groups`. Version 1 files, with `properties` instead of
 `fields`, can still be imported: category properties become choice fields
 with their values as options, in alphabetical order. See
