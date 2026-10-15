@@ -3919,8 +3919,9 @@ def run_label(run: dict, labels: list[str]) -> str:
         labels: Options from :func:`curve_label_options`.
 
     Returns:
-        Such as `"resnet-0412 · lr=0.001 · baseline"`. Labels the run has
-        no value for are left out.
+        Such as `"resnet-0412<br>lr=0.001<br>baseline"`: each label on
+        its own line under the name, so long names stay readable in the
+        legend. Labels the run has no value for are left out.
     """
     parts = [run["name"]]
     for option in labels:
@@ -3945,7 +3946,7 @@ def run_label(run: dict, labels: list[str]) -> str:
 
         if text:
             parts.append(text)
-    return " · ".join(parts)
+    return "<br>".join(parts)
 
 
 # Line styles that tell overlaid curves of the same color apart.
@@ -4019,7 +4020,11 @@ def overlay_section(
                 color, dash = run_colors_[rid], DASHES[j]
             else:
                 color, dash = metric_colors[tag], DASHES[i % len(DASHES)]
-            label = tag if one_run else f"{names[rid]} · {tag}"
+            # The scalar goes on the first line, next to the run name.
+            name, *extra = names[rid].split("<br>")
+            label = (
+                tag if one_run else "<br>".join([f"{name} · {tag}", *extra])
+            )
             add_curve(
                 fig,
                 curve_x(series, run, x_mode, tz),

@@ -166,10 +166,10 @@ Overlays training curves of up to eight runs.
   keeps its color while you add or remove others. Curves starts with the
   runs selected in Experiments, and keeps your own choice while that
   selection stays the same.
-- **Label**: up to three tags, fields or hyperparameters to show next to
-  the run name in the legends and when hovering a line, such as
-  `resnet_lr1e-3 · optimizer.lr=0.001`. Hyperparameters that differ between
-  the plotted runs are listed first.
+- **Label**: up to three tags, fields or hyperparameters to show with the
+  run name in the legends and when hovering a line, each on its own line
+  under the name, such as `optimizer.lr=0.001`. Hyperparameters that
+  differ between the plotted runs are listed first.
 - **Smoothing**: the same debiased exponential moving average as
   TensorBoard. The faint line is the raw data.
 - **X axis**: steps, hours since the run started (to compare speed), or wall
