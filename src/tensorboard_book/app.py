@@ -1973,6 +1973,45 @@ def open_default_view(settings: dict) -> None:
         st.session_state.current_view = default
 
 
+def restore_experiments() -> None:
+    """Show Experiments as it was when another view was opened.
+
+    Streamlit forgets the widgets of a view that isn't drawn, so the
+    table is set up again from the copy :func:`view_experiments` keeps.
+    The sidebar filters are left as they are, since other views change
+    them too.
+    """
+    last = st.session_state.get("exp_last")
+
+    if last is None or "info_cols" in st.session_state:
+        return
+    group = st.session_state.filters["group"]
+
+    if last["filters"]["group"] == group:
+        st.session_state[f"metrics_{group}"] = list(last["scalars"])
+        st.session_state[f"hp_{group}"] = list(last["hparams"])
+    st.session_state["info_cols"] = list(last["show"])
+    st.session_state["exp_order"] = list(last["order"])
+    st.session_state["value_mode"] = last["value"]
+    st.session_state["f_expr"] = last["filter"]
+
+
+def keep_selection(ids: list[int]) -> None:
+    """Select again the rows that were selected when Experiments was left.
+
+    Args:
+        ids: The runs in the table, in order.
+    """
+    if "exp_table" in st.session_state:
+        return
+    rows = [
+        ids.index(i) for i in st.session_state.get("selected", []) if i in ids
+    ]
+
+    if rows:
+        st.session_state.exp_table = {"selection": {"rows": rows}}
+
+
 def open_view(name: str, view: dict) -> None:
     """Callback of a view button: apply the view and say so.
 
@@ -2504,6 +2543,7 @@ def view_experiments(
         "tags": data["runs"]["tags"].to_list(),
         "groups": data["runs"]["groups"].to_list(),
     }
+    keep_selection(ids)
     event = show_table(
         styled(table, highlight, formats),
         hide_index=True,
@@ -2532,6 +2572,7 @@ def view_experiments(
     )
     selected = [ids[r] for r in event.selection.rows if r < len(ids)]
     st.session_state.selected = selected
+    st.session_state.exp_last = current_view()
 
     # The toolbar: what's selected, the actions on it
     # (disabled until they apply), and the download on the right.
@@ -2613,7 +2654,7 @@ def selection_actions(
             icon=":material/show_chart:",
             on_click=go_to,
             args=("Curves",),
-            kwargs={"curve_runs": selected[:8]},
+            kwargs={"curve_runs": selected[:8], "curve_seeded": selected},
             help="Plots the training curves of up to eight runs.",
             width="stretch",
         )
@@ -3706,6 +3747,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
     tz = viewer_tz()
     newest = candidates.sort("start_time", descending=True, nulls_last=True)
     pool = newest["id"].to_list()
+    keep_curve_runs(pool[:4])
     pool += [
         i
         for i in st.session_state.get("curve_runs", [])
@@ -3716,13 +3758,31 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
         st.info("No runs to plot.")
         return
     widget_state("curve_runs", pool, pool[:4])
-    chosen_runs = st.multiselect(
+    top = st.columns([3, 2])
+    chosen_runs = top[0].multiselect(
         "Runs",
         pool,
         key="curve_runs",
         max_selections=8,
         format_func=lambda i: by_id[i]["name"],
+        help="Starts with the runs selected in Experiments.",
     )
+    st.session_state.curve_runs_kept = list(chosen_runs)
+    label_options = curve_label_options(data, chosen_runs or pool)
+    remembered = st.session_state.get("curve_labels_kept", [])
+    widget_state("curve_labels", label_options, remembered)
+    labels = top[1].multiselect(
+        "Label",
+        label_options,
+        key="curve_labels",
+        max_selections=3,
+        format_func=curve_label_name,
+        placeholder="Run name only",
+        help="Tags, fields or hyperparameters to show next to the run name "
+        "in the legends and when hovering a line.",
+    )
+    st.session_state.curve_labels_kept = list(labels)
+    names = {i: run_label(by_id[i], labels) for i in chosen_runs}
     options = list(tag_counts(metrics, chosen_runs or pool))
     widget_state("curve_metrics", options, default_metrics(options, 4))
     tags = st.multiselect(
@@ -3760,7 +3820,7 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
 
             if series.is_empty():
                 continue
-            name = by_id[rid]["name"]
+            name = names[rid]
             x = curve_x(series, by_id[rid], x_mode, tz)
             add_curve(
                 fig,
@@ -3774,8 +3834,118 @@ def view_curves(data: dict, candidates: pl.DataFrame) -> None:
         style_curves(fig, arrow(tag, directions), x_mode, log_y)
         with columns[k % 2]:
             report_chart(fig, f"curve_{tag}", tag)
-    overlay_section(conn, data, chosen_runs, options, smoothing, x_mode, log_y)
+    overlay_section(
+        conn,
+        data,
+        chosen_runs,
+        names,
+        options,
+        smoothing,
+        x_mode,
+        log_y,
+    )
     conn.close()
+
+
+def keep_curve_runs(default: list[int]) -> None:
+    """Choose the runs Curves starts with when its picker isn't drawn yet.
+
+    Streamlit forgets the picker when another view is shown. Curves then
+    starts with the runs selected in Experiments if that selection changed
+    since Curves last took it, and with the runs it showed last otherwise.
+
+    Args:
+        default: Runs to show when there is neither (the newest ones).
+    """
+    if "curve_runs" in st.session_state:
+        return
+    selected = st.session_state.get("selected", [])
+
+    if selected and selected != st.session_state.get("curve_seeded"):
+        st.session_state.curve_runs = selected[:8]
+        st.session_state.curve_seeded = selected
+    else:
+        st.session_state.curve_runs = list(
+            st.session_state.get("curve_runs_kept") or default
+        )
+
+
+def curve_label_options(data: dict, run_ids: list[int]) -> list[str]:
+    """List what Curves can show next to a run name.
+
+    Args:
+        data: Output of :func:`load_data`, plus `by_id`.
+        run_ids: The runs on the charts.
+
+    Returns:
+        `"tags"`, then `"f:<field>"` for each field and `"h:<name>"` for
+        each hyperparameter of the runs, the ones that differ between
+        them first.
+    """
+    hparams = data["hparams"].filter(pl.col("id").is_in(run_ids))
+    names = [
+        c
+        for c in hparams.columns
+        if c != "id" and hparams[c].null_count() < hparams.height
+    ]
+    varying = an.varying_columns(hparams.select("id", *names))
+    names = varying + [c for c in names if c not in varying]
+    return [
+        "tags",
+        *(f"f:{f.name}" for f in data["fields"]),
+        *(f"h:{c}" for c in names),
+    ]
+
+
+def curve_label_name(option: str) -> str:
+    """Display text of a Label option of Curves.
+
+    Args:
+        option: Output of :func:`curve_label_options`.
+    """
+    if option == "tags":
+        return "Tags"
+
+    if option.startswith("f:"):
+        return show_label(PROP + option[2:])
+    return option[2:]
+
+
+def run_label(run: dict, labels: list[str]) -> str:
+    """Build the name of a run on a chart: its name and the chosen labels.
+
+    Args:
+        run: The run as a dict.
+        labels: Options from :func:`curve_label_options`.
+
+    Returns:
+        Such as `"resnet-0412 · lr=0.001 · baseline"`. Labels the run has
+        no value for are left out.
+    """
+    parts = [run["name"]]
+    for option in labels:
+        if option == "tags":
+            text = ", ".join(run["tags"])
+        elif option.startswith("f:"):
+            name = option[2:]
+            fld = FIELDS_BY_NAME.get(name)
+            value = run["fields"].get(name)
+
+            if fld is None or value is None:
+                continue
+
+            if isinstance(value, list):
+                text = ", ".join(str(v) for v in value)
+            else:
+                text = fld.format(value)
+            text = f"{name}={text}" if text else ""
+        else:
+            text = format_hparam(run["hparams"].get(option[2:]))
+            text = f"{option[2:]}={text}" if text else ""
+
+        if text:
+            parts.append(text)
+    return " · ".join(parts)
 
 
 # Line styles that tell overlaid curves of the same color apart.
@@ -3786,6 +3956,7 @@ def overlay_section(
     conn,
     data: dict,
     run_ids: list[int],
+    names: dict[int, str],
     options: list[str],
     smoothing: float,
     x_mode: str,
@@ -3797,6 +3968,7 @@ def overlay_section(
         conn: Open database connection.
         data: Output of :func:`load_data`, plus `by_id`.
         run_ids: Runs to plot.
+        names: Name of each run on the chart, from :func:`run_label`.
         options: Metrics the runs logged.
         smoothing: EMA weight from the Smoothing slider.
         x_mode: Value of the X axis control.
@@ -3847,7 +4019,7 @@ def overlay_section(
                 color, dash = run_colors_[rid], DASHES[j]
             else:
                 color, dash = metric_colors[tag], DASHES[i % len(DASHES)]
-            label = tag if one_run else f"{run['name']} · {tag}"
+            label = tag if one_run else f"{names[rid]} · {tag}"
             add_curve(
                 fig,
                 curve_x(series, run, x_mode, tz),
@@ -3855,7 +4027,7 @@ def overlay_section(
                 smoothing,
                 color=color,
                 name=label,
-                hover=f"{run['name']}<br>{tag}",
+                hover=f"{names[rid]}<br>{tag}",
                 dash=dash,
             )
     title = " vs ".join(arrow(t, directions) for t in tags)
@@ -3956,7 +4128,15 @@ def style_curves(
         height=height,
         margin={"l": 10, "r": 10, "t": 40, "b": 10},
         hovermode="x unified" if x_mode != "Wall time" else "closest",
-        legend={"orientation": "h", "y": -0.2},
+        # Anchored to the bottom of the figure, so a legend of several
+        # rows (long labels) pushes the chart up instead of covering the
+        # axis title.
+        legend={
+            "orientation": "h",
+            "yref": "container",
+            "y": 0,
+            "yanchor": "bottom",
+        },
         xaxis_title=None if x_mode == "Wall time" else x_mode.lower(),
     )
 
@@ -6086,6 +6266,7 @@ def main() -> None:
 
     if st.session_state.view == "Experiments":
         open_default_view(data["settings"])
+        restore_experiments()
     sidebar(runs, data["groups"], editor, now)
     # The runs that pass the sidebar filters (shown in Experiments).
     visible = apply_filters(runs, data["by_id"], st.session_state.filters)

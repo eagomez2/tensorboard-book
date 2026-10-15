@@ -35,7 +35,8 @@ pills sit in those views, under the filters.
 On/off options, such as **Aggregate seeds** in Compare or **Log y** in
 Curves, are pills: click one to turn it on, and again to turn it off. Compare can use the same runs
 through **Runs shown in Experiments**. Curves and Run details list every
-run that isn't archived.
+run that isn't archived. Curves starts with the runs selected in
+Experiments.
 
 The pages in this section are the same guides the app shows under
 **How this page works**:

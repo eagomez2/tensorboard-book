@@ -81,7 +81,8 @@ the scalars, hyperparameters and Show columns, the column order, the
 **Value** switch and the Filter box. The home button next to a view makes
 it the default: Experiments opens with it. When the table no longer
 matches the open view, **Save changes** updates it. Views are saved with
-your annotations.
+your annotations. When you come back from another page, Experiments shows
+the view, the columns and the selected rows as you left them.
 
 **Actions.** Tick rows and use the buttons under the table. They are
 greyed out until they apply:
@@ -162,7 +163,13 @@ password first if one is set.
 Overlays training curves of up to eight runs.
 
 - **Runs** and **Scalars**: one chart per scalar, one line per run. Each run
-  keeps its color while you add or remove others.
+  keeps its color while you add or remove others. Curves starts with the
+  runs selected in Experiments, and keeps your own choice while that
+  selection stays the same.
+- **Label**: up to three tags, fields or hyperparameters to show next to
+  the run name in the legends and when hovering a line, such as
+  `resnet_lr1e-3 · optimizer.lr=0.001`. Hyperparameters that differ between
+  the plotted runs are listed first.
 - **Smoothing**: the same debiased exponential moving average as
   TensorBoard. The faint line is the raw data.
 - **X axis**: steps, hours since the run started (to compare speed), or wall
